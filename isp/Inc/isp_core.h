@@ -379,6 +379,12 @@ typedef struct
   uint32_t histogram[12];     /* Histogram of the L, R, G or B component */
 } ISP_StatisticsTypeDef;
 
+/* Sensor delay */
+typedef struct
+{
+  uint8_t delay;              /* Sensor delay */
+} ISP_SensorDelayTypeDef;
+
 /* IQ parameter */
 typedef struct
 {
@@ -396,6 +402,7 @@ typedef struct
   ISP_ISPGainTypeDef ispGainStatic;
   ISP_ColorConvTypeDef colorConvStatic;
   ISP_GammaTypeDef gamma;
+  ISP_SensorDelayTypeDef sensorDelay;
 } ISP_IQParamTypeDef;
 
 /* Exported constants --------------------------------------------------------*/

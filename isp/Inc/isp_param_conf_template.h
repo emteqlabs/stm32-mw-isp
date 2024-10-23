@@ -110,6 +110,9 @@ static const ISP_IQParamTypeDef ISP_IQParamCacheInit_DUMMY = {
         .enablePipe1 = 0,
         .enablePipe2 = 0,
     },
+    .sensorDelay = {
+        .delay = 0,
+    },
 };
 
 static const ISP_IQParamTypeDef* ISP_IQParamCacheInit[] = {

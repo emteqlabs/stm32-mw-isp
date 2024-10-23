@@ -40,11 +40,6 @@ typedef enum
  * is updated and the time the frame is actually updated. Typical user = AWB algo. */
 #define ALGO_ISP_LATENCY             2
 
-/* Delay (in number of VSYNC) between the time a sensor control (gain / exposure)
- * is updated, and the time the frame is actually updated. Typical user = AEC algo.
- * This value depends on the sensor (e.g.: 3 VSYNC for IMX335, 4 VSYNC for VD66GY */
-#define ALGO_SENSOR_LATENCY          4
-
 /* Additional delay to let things getting stable after an AWB update */
 #define ALGO_AWB_ADDITIONAL_LATENCY  3
 
@@ -258,6 +253,12 @@ ISP_StatusTypeDef ISP_Algo_AEC_Init(void *hIsp, void *pAlgo)
 
   IQParamConfig = ISP_SVC_IQParam_Get(hIsp);
 
+  if (IQParamConfig->sensorDelay.delay == 0)
+  {
+    /* A value of 0 is invalid, it would break the AEC algo */
+    IQParamConfig->sensorDelay.delay = 1;
+  }
+
   /* Create st_ae_process instance */
   pIspAEprocess = evision_api_st_ae_new(log_cb);
   if (pIspAEprocess == NULL)
@@ -354,7 +355,8 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
   case ISP_ALGO_STATE_INIT:
   case ISP_ALGO_STATE_NEED_STAT:
     /* Ask for stats */
-    ret = ISP_SVC_Stats_GetNext(hIsp, &ISP_Algo_AEC_StatCb, pAlgo, &stats, ISP_STAT_LOC_DOWN, ISP_STAT_TYPE_AVG, ALGO_SENSOR_LATENCY);
+    ret = ISP_SVC_Stats_GetNext(hIsp, &ISP_Algo_AEC_StatCb, pAlgo, &stats, ISP_STAT_LOC_DOWN,
+                                ISP_STAT_TYPE_AVG, IQParamConfig->sensorDelay.delay);
     if (ret != ISP_OK)
     {
       return ret;
@@ -430,8 +432,8 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
     }
 
     /* Ask for stats */
-    ret = ISP_SVC_Stats_GetNext(hIsp, &ISP_Algo_AEC_StatCb, pAlgo, &stats,
-                                ISP_STAT_LOC_DOWN, ISP_STAT_TYPE_AVG, ALGO_SENSOR_LATENCY);
+    ret = ISP_SVC_Stats_GetNext(hIsp, &ISP_Algo_AEC_StatCb, pAlgo, &stats, ISP_STAT_LOC_DOWN,
+                                ISP_STAT_TYPE_AVG, IQParamConfig->sensorDelay.delay);
 
     /* Wait for stats to be ready */
     algo->state = ISP_ALGO_STATE_WAITING_STAT;

@@ -61,6 +61,7 @@ typedef enum {
   ISP_CMD_GAMMA                = 0x17,
   ISP_CMD_SENSORINFO           = 0x18,
   ISP_CMD_SENSORTESTPATTERN    = 0x19,
+  ISP_CMD_SENSORDELAY          = 0x1A,
   /* Application API commands */
   ISP_CMD_USER_EXPOSURETARGET  = 0x80,
   ISP_CMD_USER_LISTWBREFMODES  = 0x81,
@@ -234,6 +235,12 @@ typedef struct
   ISP_SensorInfoTypeDef data;
 } ISP_CMD_SensorInfoTypeDef;
 
+typedef struct
+{
+  ISP_CMD_HeaderTypeDef header;
+  ISP_SensorDelayTypeDef data;
+} ISP_CMD_SensorDelayTypeDef;
+
 typedef union {
   ISP_CMD_BaseTypeDef              base;
   ISP_CMD_StatRemovalTypeDef       statRemoval;
@@ -261,6 +268,7 @@ typedef union {
   ISP_CMD_GammaTypeDef             gamma;
   ISP_CMD_SensorInfoTypeDef        sensorInfo;
   ISP_CMD_SensorTestPatternTypeDef sensorTestPattern;
+  ISP_CMD_SensorDelayTypeDef       sensorDelay;
 } ISP_CMD_TypeDef;
 
 /* Private constants ---------------------------------------------------------*/
@@ -526,6 +534,11 @@ static ISP_StatusTypeDef ISP_CmdParser_SetConfig(ISP_HandleTypeDef *hIsp, uint8_
     }
     break;
 
+  case ISP_CMD_SENSORDELAY:
+    /* Update IQ params */
+    IQParamConfig->sensorDelay = c.sensorDelay.data;
+    break;
+
   default:
     ret = ISP_ERR_CMDPARSER_COMMAND;
   }
@@ -693,6 +706,10 @@ static ISP_StatusTypeDef ISP_CmdParser_GetConfig(ISP_HandleTypeDef *hIsp, uint8_
 
   case ISP_CMD_SENSORINFO:
     c.sensorInfo.data = hIsp->sensorInfo;
+    break;
+
+  case ISP_CMD_SENSORDELAY:
+    c.sensorDelay.data = IQParamConfig->sensorDelay;
     break;
 
   default:
