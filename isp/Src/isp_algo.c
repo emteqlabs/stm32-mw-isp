@@ -145,6 +145,7 @@ static evision_awb_estimator_t* pIspAWBestimator;
 
 /* Global variables ----------------------------------------------------------*/
 uint32_t current_awb_profId = 0;
+ISP_MetaTypeDef Meta = {0};
 
 /* Private functions ---------------------------------------------------------*/
 /**
@@ -419,6 +420,10 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
     {
       return ret;
     }
+
+    /* Store meta data */
+    Meta.averageL = avgL;
+    Meta.exposureTarget = IQParamConfig->AECAlgo.exposureTarget;
 
     /* Run algo to calculate new gain and exposure */
     e_ret = evision_api_st_ae_process(pIspAEprocess, gainConfig.gain, exposureConfig.exposure, avgL);
@@ -781,6 +786,9 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
 #ifdef ALGO_AWB_DBG_LOGS
         printf("Color temperature = %ld\r\n", (uint32_t) pIspAWBestimator->out_temp);
 #endif
+        /* Store meta data */
+        Meta.colorTemp = (uint32_t) pIspAWBestimator->out_temp;
+
         /* Find the index profile for this referenceColorTemp */
         for (profId = 0; profId < ISP_AWB_COLORTEMP_REF; profId++)
         {

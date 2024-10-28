@@ -54,5 +54,6 @@ void ISP_IncAncillaryFrameId(ISP_HandleTypeDef *hIsp);
 uint32_t ISP_GetAncillaryFrameId(ISP_HandleTypeDef *hIsp);
 void ISP_IncDumpFrameId(ISP_HandleTypeDef *hIsp);
 uint32_t ISP_GetDumpFrameId(ISP_HandleTypeDef *hIsp);
+void ISP_OutputMeta(ISP_HandleTypeDef *hIsp);
 
 #endif /* __ISP_API__H */

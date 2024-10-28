@@ -69,6 +69,8 @@ typedef enum {
   ISP_CMD_USER_WBREFMODE       = 0x82,
   ISP_CMD_USER_GETDECIMATION   = 0x83,
   ISP_CMD_USER_STATISTICAREA   = 0x84,
+  /* Metadata output command */
+  ISP_CMD_METADATA_OUTPUT      = 0xFF,
 } ISP_CMD_ID_TypeDef;
 
 typedef struct
@@ -248,6 +250,12 @@ typedef struct
   ISP_SensorDelayTypeDef data;
 } ISP_CMD_SensorDelayMeasureTypeDef;
 
+typedef struct
+{
+  ISP_CMD_HeaderTypeDef header;
+  uint8_t enable;
+} ISP_CMD_MetadataOutputTypeDef;
+
 typedef union {
   ISP_CMD_BaseTypeDef              base;
   ISP_CMD_StatRemovalTypeDef       statRemoval;
@@ -277,6 +285,7 @@ typedef union {
   ISP_CMD_SensorTestPatternTypeDef sensorTestPattern;
   ISP_CMD_SensorDelayTypeDef       sensorDelay;
   ISP_CMD_SensorDelayMeasureTypeDef sensorDelayMeasure;
+  ISP_CMD_MetadataOutputTypeDef    metadataOutput;
 } ISP_CMD_TypeDef;
 
 /* Private constants ---------------------------------------------------------*/
@@ -295,6 +304,7 @@ static ISP_StatusTypeDef ISP_CmdParser_StatDownCb(ISP_AlgoTypeDef *pAlgo);
 static ISP_SVC_StatStateTypeDef ISP_CmdParser_stats;
 
 extern uint32_t current_awb_profId;
+extern ISP_MetaTypeDef Meta;
 
 /**
   * @brief  ISP_CmdParser_ProcessCommand
@@ -568,6 +578,11 @@ static ISP_StatusTypeDef ISP_CmdParser_SetConfig(ISP_HandleTypeDef *hIsp, uint8_
     IQParamConfig->sensorDelay = c.sensorDelay.data;
     break;
 
+  case ISP_CMD_METADATA_OUTPUT:
+    Meta.outputEnable = c.metadataOutput.enable;
+    break;
+
+
   default:
     ret = ISP_ERR_CMDPARSER_COMMAND;
   }
@@ -744,6 +759,10 @@ static ISP_StatusTypeDef ISP_CmdParser_GetConfig(ISP_HandleTypeDef *hIsp, uint8_
   case ISP_CMD_SENSORDELAYMEASURE:
     /* Start the sensor delay measure. Answer will be sent later at the end of the measure */
     ISP_SVC_Misc_SensorDelayMeasureStart();
+    break;
+
+  case ISP_CMD_METADATA_OUTPUT:
+    c.metadataOutput.enable = Meta.outputEnable;
     break;
 
   default:

@@ -654,3 +654,19 @@ uint32_t ISP_GetDumpFrameId(ISP_HandleTypeDef *hIsp)
 {
   return ISP_SVC_Misc_GetDumpFrameId(hIsp);
 }
+
+/**
+  * @brief  ISP_OutputMeta
+  *         Print out ISP Meta data for test or debug purpose
+  * @param  hIsp: ISP device handle
+  * @retval None
+  */
+void ISP_OutputMeta(ISP_HandleTypeDef *hIsp)
+{
+  extern ISP_MetaTypeDef Meta;
+
+  if (Meta.outputEnable)
+  {
+    printf("Meta[%ld]: L = %d, TG = %ld, G = %ld, E = %ld, CT = %ld\r\n", hIsp->MainPipe_FrameCount, Meta.averageL, Meta.exposureTarget, Meta.gain, Meta.exposure, Meta.colorTemp);
+  }
+}

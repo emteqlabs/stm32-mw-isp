@@ -385,6 +385,17 @@ typedef struct
   uint8_t delay;              /* Sensor delay */
 } ISP_SensorDelayTypeDef;
 
+/* Meta data will transit through STLINK if validation test is enabled */
+typedef struct
+{
+  uint8_t outputEnable;
+  uint8_t averageL;
+  uint32_t exposureTarget;
+  uint32_t gain;              /* Gain in mdB */
+  uint32_t exposure;          /* Exposure time in micro seconds */
+  uint32_t colorTemp;
+} ISP_MetaTypeDef;
+
 /* IQ parameter */
 typedef struct
 {

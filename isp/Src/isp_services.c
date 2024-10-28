@@ -137,6 +137,7 @@ static const DCMIPP_StatisticExtractionConfTypeDef statConfDownBins_9_11 = {
 };
 
 /* Exported variables --------------------------------------------------------*/
+extern ISP_MetaTypeDef Meta;
 
 /* Private functions ---------------------------------------------------------*/
 static void To_Shift_Multiplier(uint32_t Factor, uint8_t *pShift, uint8_t *pMultiplier)
@@ -1118,6 +1119,8 @@ ISP_StatusTypeDef ISP_SVC_Sensor_SetGain(ISP_HandleTypeDef *hIsp, ISP_SensorGain
     }
   }
 
+  Meta.gain = pConfig->gain;
+
   return ISP_OK;
 }
 
@@ -1169,6 +1172,8 @@ ISP_StatusTypeDef ISP_SVC_Sensor_SetExposure(ISP_HandleTypeDef *hIsp, ISP_Sensor
       return ISP_ERR_SENSOREXPOSURE;
     }
   }
+
+  Meta.exposure = pConfig->exposure;
 
   return ISP_OK;
 }
