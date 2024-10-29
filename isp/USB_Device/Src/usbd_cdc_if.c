@@ -219,6 +219,11 @@ static int8_t CDC_TransmitCplt(uint8_t *Buf, uint32_t *Len, uint8_t epnum)
   UNUSED(Len);
   UNUSED(epnum);
 
+  /* Dirty hack that allows to dump frame with windows environment
+   * It slows down the acknowledge before a new transmission
+   */
+  for (uint32_t i = 0 ; i < 10000 ; i++);
+
   return result;
 }
 
