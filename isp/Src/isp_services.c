@@ -975,8 +975,10 @@ ISP_StatusTypeDef ISP_SVC_ISP_GetGain(ISP_HandleTypeDef *hIsp, ISP_ISPGainTypeDe
 ISP_StatusTypeDef ISP_SVC_ISP_SetColorConv(ISP_HandleTypeDef *hIsp, ISP_ColorConvTypeDef *pConfig)
 {
   HAL_StatusTypeDef halStatus;
-  DCMIPP_ColorConversionConfTypeDef colorConvConfig = {0};
+  DCMIPP_ColorConversionConfTypeDef colorConvConfig;
   uint32_t i, j;
+
+  memset(&colorConvConfig, 0, sizeof(colorConvConfig));
 
   /* Check handle validity */
   if ((hIsp == NULL) || (pConfig == NULL))
