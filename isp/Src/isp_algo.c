@@ -621,7 +621,7 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
     profNb = 0;
     for (profId = 0; profId < ISP_AWB_COLORTEMP_REF && profId < EVISION_AWB_MAX_PROFILE_COUNT; profId++)
     {
-      colorTemp = (float) IQParamConfig->AWBAlgo.referenceColorTemp[profId];
+      colorTemp = IQParamConfig->AWBAlgo.referenceColorTemp[profId];
       if (colorTemp == 0)
         break;
 

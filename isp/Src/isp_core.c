@@ -311,7 +311,7 @@ ISP_StatusTypeDef ISP_Start(ISP_HandleTypeDef *hIsp)
   }
 
   /* Initialize the exposure target based on the selected exposure compensation */
-  IQParamConfig->AECAlgo.exposureTarget = ISP_IDEAL_TARGET_EXPOSURE * pow(2, (float)IQParamConfig->AECAlgo.exposureCompensation / 2);
+  IQParamConfig->AECAlgo.exposureTarget = (uint32_t) (ISP_IDEAL_TARGET_EXPOSURE * pow(2, (float)IQParamConfig->AECAlgo.exposureCompensation / 2));
 
   return ISP_OK;
 }
@@ -379,7 +379,7 @@ ISP_StatusTypeDef ISP_SetExposureTarget(ISP_HandleTypeDef *hIsp, ISP_ExposureCom
 
   IQParamConfig = ISP_SVC_IQParam_Get(hIsp);
   IQParamConfig->AECAlgo.exposureCompensation = ExposureCompensation;
-  IQParamConfig->AECAlgo.exposureTarget = ISP_IDEAL_TARGET_EXPOSURE * pow(2, (float)ExposureCompensation / 2);
+  IQParamConfig->AECAlgo.exposureTarget = (uint32_t) (ISP_IDEAL_TARGET_EXPOSURE * pow(2, (float)ExposureCompensation / 2));
 
   return ISP_OK;
 }
