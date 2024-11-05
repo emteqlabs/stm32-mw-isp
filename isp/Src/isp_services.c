@@ -422,7 +422,7 @@ static ISP_SVC_StatEngineStage GetStatCycleEnd(ISP_SVC_StatLocation location)
 uint8_t LuminanceFromRGB(uint8_t r, uint8_t g, uint8_t b)
 {
   /* Compute luminance from RGB components (BT.601) */
-  return r * 0.299 + g * 0.587 + b * 0.114;
+  return (uint8_t) (r * 0.299 + g * 0.587 + b * 0.114);
 }
 
 uint8_t LuminanceFromRGBMono(uint8_t r, uint8_t g, uint8_t b)
