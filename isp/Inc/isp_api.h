@@ -31,7 +31,7 @@
 /* Exported macro ------------------------------------------------------------*/
 
 /* Exported functions ------------------------------------------------------- */
-ISP_StatusTypeDef ISP_Init(ISP_HandleTypeDef *hIsp, void *hDcmipp, uint32_t CameraInstance, ISP_AppliHelpersTypeDef *pAppliHelpers, ISP_StatAreaTypeDef *pStatArea, const ISP_IQParamTypeDef *ISP_IQParamCacheInit);
+ISP_StatusTypeDef ISP_Init(ISP_HandleTypeDef *hIsp, void *hDcmipp, uint32_t CameraInstance, ISP_AppliHelpersTypeDef *pAppliHelpers, const ISP_IQParamTypeDef *ISP_IQParamCacheInit);
 ISP_StatusTypeDef ISP_DeInit(ISP_HandleTypeDef *hIsp);
 ISP_StatusTypeDef ISP_Start(ISP_HandleTypeDef *hIsp);
 ISP_StatusTypeDef ISP_BackgroundProcess(ISP_HandleTypeDef *hIsp);

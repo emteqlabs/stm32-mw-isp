@@ -716,6 +716,9 @@ ISP_StatusTypeDef ISP_SVC_ISP_SetStatArea(ISP_HandleTypeDef *hIsp, ISP_StatAreaT
     return ISP_ERR_STATAREA_HAL;
   }
 
+  /* Update internal state */
+  hIsp->statArea = *pConfig;
+
   return ret;
 }
 
