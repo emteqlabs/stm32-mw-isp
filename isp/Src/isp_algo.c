@@ -45,7 +45,8 @@ typedef enum
  * This value depends on the sensor (e.g.: 3 VSYNC for IMX335, 4 VSYNC for VD66GY */
 #define ALGO_SENSOR_LATENCY          4
 
-#define ALGO_AWB_CCT_PREVENT_NB      11
+/* Additional delay to let things getting stable after an AWB update */
+#define ALGO_AWB_ADDITIONAL_LATENCY  3
 
 /* Debug logs control */
 //#define ALGO_AWB_DBG_LOGS
@@ -673,7 +674,7 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
 
     /* Ask for stats */
     ret = ISP_SVC_Stats_GetNext(hIsp, &ISP_Algo_AWB_StatCb, pAlgo, &stats, ISP_STAT_LOC_DOWN,
-                                ISP_STAT_TYPE_AVG, ALGO_ISP_LATENCY);
+                                ISP_STAT_TYPE_AVG, ALGO_ISP_LATENCY + ALGO_AWB_ADDITIONAL_LATENCY);
     if (ret != ISP_OK)
     {
       return ret;
@@ -685,7 +686,7 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
 
   case ISP_ALGO_STATE_NEED_STAT:
     ret = ISP_SVC_Stats_GetNext(hIsp, &ISP_Algo_AWB_StatCb, pAlgo, &stats, ISP_STAT_LOC_DOWN,
-                                ISP_STAT_TYPE_AVG, ALGO_ISP_LATENCY);
+                                ISP_STAT_TYPE_AVG, ALGO_ISP_LATENCY + ALGO_AWB_ADDITIONAL_LATENCY);
     if (ret != ISP_OK)
     {
       return ret;
@@ -795,7 +796,7 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
 
     /* Ask for stats */
     ret_stat = ISP_SVC_Stats_GetNext(hIsp, &ISP_Algo_AWB_StatCb, pAlgo, &stats, ISP_STAT_LOC_DOWN,
-                                     ISP_STAT_TYPE_AVG, ALGO_ISP_LATENCY);
+                                     ISP_STAT_TYPE_AVG, ALGO_ISP_LATENCY + ALGO_AWB_ADDITIONAL_LATENCY);
     ret = (ret != ISP_OK) ? ret : ret_stat;
 
     /* Wait for stats to be ready */
