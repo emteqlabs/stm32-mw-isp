@@ -1576,6 +1576,7 @@ void ISP_SVC_Stats_Gather(ISP_HandleTypeDef *hIsp)
 {
   static ISP_SVC_StatEngineStage stagePrevious1 = ISP_STAT_CFG_LAST, stagePrevious2 = ISP_STAT_CFG_LAST;
   DCMIPP_StatisticExtractionConfTypeDef statConf[3];
+  ISP_IQParamTypeDef *IQParamConfig;
   ISP_SVC_StatStateTypeDef *ongoing;
   uint32_t i, avgR, avgG, avgB, frameId;
 
@@ -1635,7 +1636,8 @@ void ISP_SVC_Stats_Gather(ISP_HandleTypeDef *hIsp)
     ongoing->down.averageR = GetAvgStats(hIsp, ISP_STAT_LOC_DOWN, ISP_RED, avgR);
     ongoing->down.averageG = GetAvgStats(hIsp, ISP_STAT_LOC_DOWN, ISP_GREEN, avgG);
     ongoing->down.averageB = GetAvgStats(hIsp, ISP_STAT_LOC_DOWN, ISP_BLUE, avgB);
-    if (hIsp->sensorInfo.bayer_pattern == ISP_DEMOS_TYPE_MONO)
+    IQParamConfig = ISP_SVC_IQParam_Get(hIsp);
+    if ((hIsp->sensorInfo.bayer_pattern == ISP_DEMOS_TYPE_MONO) || (!IQParamConfig->demosaicing.enable))
     {
       ongoing->down.averageL = LuminanceFromRGBMono(ongoing->down.averageR, ongoing->down.averageG, ongoing->down.averageB);
     }
