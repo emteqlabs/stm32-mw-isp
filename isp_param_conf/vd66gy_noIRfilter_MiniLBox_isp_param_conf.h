@@ -31,7 +31,7 @@ static const ISP_IQParamTypeDef ISP_IQParamCacheInit_VD66GY = {
     },
     .AECAlgo = {
         .enable = 1,
-        .exposureCompensation = 0,
+        .exposureCompensation = EXPOSURE_TARGET_0_0_EV,
     },
     .statRemoval = {
         .enable = 0,
@@ -54,7 +54,7 @@ static const ISP_IQParamTypeDef ISP_IQParamCacheInit_VD66GY = {
     },
     .demosaicing = {
         .enable = 1,
-        .type = 1,
+        .type = ISP_DEMOS_TYPE_GRBG,
         .peak = 2,
         .lineV = 4,
         .lineH = 4,

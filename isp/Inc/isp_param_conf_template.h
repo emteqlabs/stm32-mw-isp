@@ -34,7 +34,7 @@ static const ISP_IQParamTypeDef ISP_IQParamCacheInit_DUMMY = {
     },
     .AECAlgo = {
         .enable = 0,
-        .exposureCompensation = 0,
+        .exposureCompensation = EXPOSURE_TARGET_0_0_EV,
     },
     .statRemoval = {
         .enable = 0,
@@ -57,7 +57,7 @@ static const ISP_IQParamTypeDef ISP_IQParamCacheInit_DUMMY = {
     },
     .demosaicing = {
         .enable = 1,
-        .type = 0,
+        .type = ISP_DEMOS_TYPE_RGGB,
         .peak = 0,
         .lineV = 0,
         .lineH = 0,
