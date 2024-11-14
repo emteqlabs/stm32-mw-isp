@@ -1,6 +1,6 @@
 # STM32 ISP Library
 
-version 1.0.0
+![latest tag](https://img.shields.io/github/v/tag/STMicroelectronics/stm32-mw-isp.svg?color=brightgreen)
 
 The ISP Library middleware (running on the target) hosts 2A algorithms
 (Auto Exposure and Auto White Balance) and mechanisms to control the
@@ -18,10 +18,13 @@ ISP_MW_TUNING_TOOL_SUPPORT must be enabled.
 - evision: 2A algorithms that are delivered as binary
 
 ## Enhancements, new features
-- Initial release
+- Fix dump issue while using the STM32 ISP IQTune desktop application in a
+  windows environment
+- Fix IAR build warnings
 
 ## Known Issues and Limitations
-- In some situations, Auto White Balance (AWB) algorithm can flicker between 2 AWB profiles\*
+- In some situations, Auto White Balance (AWB) algorithm can flicker between
+2 AWB profiles\*
 <br>
 \* Fix is under preparation
 
