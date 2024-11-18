@@ -275,6 +275,8 @@ ISP_StatusTypeDef ISP_Algo_AEC_Init(void *hIsp, void *pAlgo)
 {
   ISP_HandleTypeDef *pIsp_handle = (ISP_HandleTypeDef*) hIsp;
   ISP_AlgoTypeDef *algo = (ISP_AlgoTypeDef *)pAlgo;
+  ISP_SensorExposureTypeDef exposureConfig;
+  ISP_SensorGainTypeDef gainConfig;
   ISP_IQParamTypeDef *IQParamConfig;
   evision_return_t e_ret;
 
@@ -309,6 +311,17 @@ ISP_StatusTypeDef ISP_Algo_AEC_Init(void *hIsp, void *pAlgo)
   pIspAEprocess->hyper_params.exposure_max = pIsp_handle->sensorInfo.exposure_max;
   pIspAEprocess->hyper_params.gain_min = pIsp_handle->sensorInfo.gain_min;
   pIspAEprocess->hyper_params.gain_max = pIsp_handle->sensorInfo.gain_max;
+
+  /* Initialize exposure and gain at min value */
+  if (IQParamConfig->AECAlgo.enable == true)
+  {
+    exposureConfig.exposure = pIsp_handle->sensorInfo.exposure_min;
+    gainConfig.gain = pIsp_handle->sensorInfo.gain_min;
+    if ((ISP_SVC_Sensor_SetExposure(hIsp, &exposureConfig) != ISP_OK) || (ISP_SVC_Sensor_SetGain(hIsp, &gainConfig)!= ISP_OK))
+    {
+      return ISP_ERR_ALGO;
+    }
+  }
 
   /* Update State */
   algo->state = ISP_ALGO_STATE_INIT;
