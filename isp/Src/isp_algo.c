@@ -714,7 +714,7 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
 
     /* Configure algo */
     pIspAWBestimator->hyper_params.speed_p_min = 1.35;
-    pIspAWBestimator->hyper_params.speed_p_max = (profNb < 4)? 1.8 : 2.0;
+    pIspAWBestimator->hyper_params.speed_p_max = (profNb < 4)? 1.65 : 2.0;
     pIspAWBestimator->hyper_params.gm_tolerance = 1;
     pIspAWBestimator->hyper_params.conv_criterion = 3;
 
