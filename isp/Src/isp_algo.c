@@ -258,7 +258,7 @@ ISP_StatusTypeDef ISP_Algo_BadPixel_Process(void *hIsp, void *pAlgo)
 #if defined(ISP_MW_SW_AEC_ALGO_SUPPORT) || defined(ISP_MW_SW_AWB_ALGO_SUPPORT)
 static void log_cb(const char *const msg)
 {
-  printf(msg);
+  printf("%s", msg);
   printf("\r\n");
 }
 #endif
