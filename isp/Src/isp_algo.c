@@ -39,10 +39,11 @@ typedef enum
 /* Private constants ---------------------------------------------------------*/
 /* Delay (in number of VSYNC) between the time an ISP control (e.g. ColorConv)
  * is updated and the time the frame is actually updated. Typical user = AWB algo. */
-#define ALGO_ISP_LATENCY             2
-
+#define ALGO_ISP_LATENCY                             2
 /* Additional delay to let things getting stable after an AWB update */
-#define ALGO_AWB_ADDITIONAL_LATENCY  3
+#define ALGO_AWB_ADDITIONAL_LATENCY                  3
+#define ALGO_AWB_STAT_CHECK_SKIP_AFTER_INIT          10
+#define ALGO_AWB_STAT_CHECK_SKIP_AFTER_CT_ESTIMATION 4
 
 /* Debug logs control */
 //#define ALGO_AWB_DBG_LOGS
@@ -512,6 +513,46 @@ double ISP_Algo_ApplyGammaInverse(ISP_HandleTypeDef *hIsp, uint32_t comp)
 }
 
 /**
+  * @brief  ISP_Algo_GetUpStat
+  *         Recalculate average up statistics from collected down statistics
+  * @param  hIsp:  ISP device handle.
+  * @param  pStats: pointer to the statistics
+  */
+void ISP_Algo_GetUpStat(ISP_HandleTypeDef *hIsp, ISP_SVC_StatStateTypeDef *pStats)
+{
+  ISP_ISPGainTypeDef ISPGain;
+  ISP_BlackLevelTypeDef BlackLevel;
+  int64_t upR, upG, upB;
+
+  if ((ISP_SVC_ISP_GetGain(hIsp, &ISPGain) == ISP_OK) && (ISPGain.enable == 1))
+  {
+
+    /* reverse gain */
+    upR = (int64_t) pStats->down.averageR * ISP_GAIN_PRECISION_FACTOR / ISPGain.ispGainR;
+    upG = (int64_t) pStats->down.averageG * ISP_GAIN_PRECISION_FACTOR / ISPGain.ispGainG;
+    upB = (int64_t) pStats->down.averageB * ISP_GAIN_PRECISION_FACTOR / ISPGain.ispGainB;
+
+    pStats->up.averageR = (uint32_t) upR;
+    pStats->up.averageG = (uint32_t) upG;
+    pStats->up.averageB = (uint32_t) upB;
+
+    if ((ISP_SVC_ISP_GetBlackLevel(hIsp, &BlackLevel) == ISP_OK) && (BlackLevel.enable == 1))
+    {
+        /* reverse black level */
+    pStats->up.averageR += BlackLevel.BLCR;
+    pStats->up.averageG += BlackLevel.BLCG;
+    pStats->up.averageB += BlackLevel.BLCB;
+    }
+  }
+  else
+  {
+    pStats->up.averageR = pStats->down.averageR;
+    pStats->up.averageG = pStats->down.averageG;
+    pStats->up.averageB = pStats->down.averageB;
+  }
+}
+
+/**
   * @brief  ISP_Algo_ApplyCConv
   *         Apply Color Conversion matrix to RGB components, clamping output values to [0-255]
   * @param  hIsp:  ISP device handle.
@@ -644,6 +685,9 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
   uint32_t ccAvgR, ccAvgG, ccAvgB, colorTemp, i, j, profId, profNb;
   float cfaGains[4], ccmCoeffs[3][3], ccmOffsets[3] = { 0 };
   double meas[3];
+  static uint32_t statsHistory[3][3] = { 0 };
+  static uint32_t colorTempHistory[2] = { 0 };
+  static uint8_t skip_stat_check_count = ALGO_AWB_STAT_CHECK_SKIP_AFTER_INIT;
 
   IQParamConfig = ISP_SVC_IQParam_Get(hIsp);
 
@@ -714,7 +758,7 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
 
     /* Configure algo */
     pIspAWBestimator->hyper_params.speed_p_min = 1.35;
-    pIspAWBestimator->hyper_params.speed_p_max = (profNb < 4)? 1.65 : 2.0;
+    pIspAWBestimator->hyper_params.speed_p_max = (profNb < 4)? 1.8 : 2.0;
     pIspAWBestimator->hyper_params.gm_tolerance = 1;
     pIspAWBestimator->hyper_params.conv_criterion = 3;
 
@@ -747,101 +791,133 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
     break;
 
   case ISP_ALGO_STATE_STAT_READY:
-    /* Get stats after color conversion */
-    ISP_Algo_ApplyCConv(hIsp, stats.down.averageR, stats.down.averageG, stats.down.averageB, &ccAvgR, &ccAvgG, &ccAvgB);
+    ISP_Algo_GetUpStat(hIsp, &stats);
 
-    /* Apply gamma */
-    meas[0] = ISP_Algo_ApplyGammaInverse(hIsp, ccAvgR);
-    meas[1] = ISP_Algo_ApplyGammaInverse(hIsp, ccAvgG);
-    meas[2] = ISP_Algo_ApplyGammaInverse(hIsp, ccAvgB);
-
-    /* Run algo to estimate gain and color conversion to apply */
-    e_ret = evision_api_awb_run_average(pIspAWBestimator, NULL, 1, meas);
-    if (e_ret == EVISION_RET_SUCCESS)
+    if (!(!skip_stat_check_count && (abs(stats.up.averageR - statsHistory[0][0]) <= 2) && (abs(stats.up.averageG - statsHistory[0][1]) <= 2) && (abs(stats.up.averageB - statsHistory[0][2]) <= 2)
+        && (abs(stats.up.averageR - statsHistory[1][0]) <= 2) && (abs(stats.up.averageG - statsHistory[1][1]) <= 2) && (abs(stats.up.averageB - statsHistory[1][2]) <= 2)
+        && (abs(stats.up.averageR - statsHistory[2][0]) <= 2) && (abs(stats.up.averageG - statsHistory[2][1]) <= 2) && (abs(stats.up.averageB - statsHistory[2][2]) <= 2)))
     {
+        statsHistory[2][0] = stats.up.averageR;
+        statsHistory[2][1] = stats.up.averageG;
+        statsHistory[2][2] = stats.up.averageB;
+
+        /* Get stats after color conversion */
+        ISP_Algo_ApplyCConv(hIsp, stats.down.averageR, stats.down.averageG, stats.down.averageB, &ccAvgR, &ccAvgG, &ccAvgB);
+
+        /* Apply gamma */
+        meas[0] = ISP_Algo_ApplyGammaInverse(hIsp, ccAvgR);
+        meas[1] = ISP_Algo_ApplyGammaInverse(hIsp, ccAvgG);
+        meas[2] = ISP_Algo_ApplyGammaInverse(hIsp, ccAvgB);
+
+        /* Run algo to estimate gain and color conversion to apply */
+        e_ret = evision_api_awb_run_average(pIspAWBestimator, NULL, 1, meas);
+        if (e_ret == EVISION_RET_SUCCESS)
+        {
 #ifdef ALGO_AWB_DBG_LOGS
-      static int nb_meas, nb_changes;
-      static int nb_colortemp_change[ISP_AWB_COLORTEMP_REF];
+          static int nb_meas, nb_changes;
+          static int nb_colortemp_change[ISP_AWB_COLORTEMP_REF];
 
-      nb_meas++;
-      if (pIspAWBestimator->out_temp != currentColorTemp)
-        nb_changes++;
-      for (int i = 0; i < ISP_AWB_COLORTEMP_REF; i++) {
-        if (pIspAWBestimator->out_temp == IQParamConfig->AWBAlgo.referenceColorTemp[i])
-        {
-          nb_colortemp_change[i]++;
-          continue;
-        }
-      }
-
-      if (nb_meas == 100)
-      {
-        printf("Last 100 measures:\r\n");
-        for (int i = 0; i < ISP_AWB_COLORTEMP_REF; i++) {
-          printf("\t%ld: %d\r\n",
-                 IQParamConfig->AWBAlgo.referenceColorTemp[i],
-                 nb_colortemp_change[i]);
-        }
-        printf("\nChanges: %d\r\n", nb_changes);
-
-        nb_meas = 0;
-        nb_changes = 0;
-        for (int i = 0; i < ISP_AWB_COLORTEMP_REF; i++) {
-          nb_colortemp_change[i] = 0;
-        }
-      }
-#endif
-      if (pIspAWBestimator->out_temp != currentColorTemp || reconfigureRequest == true)
-      {
-        /* Force to apply a WB profile when reconfigureRequest is true */
-        reconfigureRequest = false;
-
-#ifdef ALGO_AWB_DBG_LOGS
-        printf("Color temperature = %ld\r\n", (uint32_t) pIspAWBestimator->out_temp);
-#endif
-        /* Store meta data */
-        Meta.colorTemp = (uint32_t) pIspAWBestimator->out_temp;
-
-        /* Find the index profile for this referenceColorTemp */
-        for (profId = 0; profId < ISP_AWB_COLORTEMP_REF; profId++)
-        {
-          if (pIspAWBestimator->out_temp == IQParamConfig->AWBAlgo.referenceColorTemp[profId])
-            break;
-        }
-
-        if (profId == ISP_AWB_COLORTEMP_REF)
-        {
-          /* Unknown profile */
-          ret  = ISP_ERR_WB_COLORTEMP;
-        }
-        else
-        {
-          /* Apply Color Conversion */
-          ColorConvConfig.enable = 1;
-          memcpy(ColorConvConfig.coeff, IQParamConfig->AWBAlgo.coeff[profId], sizeof(ColorConvConfig.coeff));
-          ret = ISP_SVC_ISP_SetColorConv(hIsp, &ColorConvConfig);
-
-          /* Apply gain */
-          if (ret == ISP_OK)
-          {
-            ISPGainConfig.enable = 1;
-            ISPGainConfig.ispGainR = IQParamConfig->AWBAlgo.ispGainR[profId];
-            ISPGainConfig.ispGainG = IQParamConfig->AWBAlgo.ispGainG[profId];
-            ISPGainConfig.ispGainB = IQParamConfig->AWBAlgo.ispGainB[profId];
-            ret = ISP_SVC_ISP_SetGain(hIsp, &ISPGainConfig);
-            if (ret == ISP_OK)
+          nb_meas++;
+          if (pIspAWBestimator->out_temp != currentColorTemp)
+            nb_changes++;
+          for (int i = 0; i < ISP_AWB_COLORTEMP_REF; i++) {
+            if (pIspAWBestimator->out_temp == IQParamConfig->AWBAlgo.referenceColorTemp[i])
             {
-              currentColorTemp = (uint32_t) pIspAWBestimator->out_temp ;
-              current_awb_profId = profId;
+              nb_colortemp_change[i]++;
+              continue;
+            }
+          }
+
+          if (nb_meas == 100)
+          {
+            printf("Last 100 measures:\r\n");
+            for (int i = 0; i < ISP_AWB_COLORTEMP_REF; i++) {
+              printf("\t%ld: %d\r\n",
+                     IQParamConfig->AWBAlgo.referenceColorTemp[i],
+                     nb_colortemp_change[i]);
+            }
+            printf("\nChanges: %d\r\n", nb_changes);
+
+            nb_meas = 0;
+            nb_changes = 0;
+            for (int i = 0; i < ISP_AWB_COLORTEMP_REF; i++) {
+              nb_colortemp_change[i] = 0;
+            }
+          }
+#endif
+          if (pIspAWBestimator->out_temp != currentColorTemp || reconfigureRequest == true)
+          {
+            /* Force to apply a WB profile when reconfigureRequest is true */
+            reconfigureRequest = false;
+#ifdef ALGO_AWB_DBG_LOGS
+            printf("Color temperature = %ld\r\n", (uint32_t) pIspAWBestimator->out_temp);
+#endif
+            if (pIspAWBestimator->out_temp == colorTempHistory[1])
+            {
+              skip_stat_check_count = 0; //oscillation detected
+            }
+            else
+            {
+              if (skip_stat_check_count <= ALGO_AWB_STAT_CHECK_SKIP_AFTER_CT_ESTIMATION) skip_stat_check_count = ALGO_AWB_STAT_CHECK_SKIP_AFTER_CT_ESTIMATION;
+
+              /* Store meta data */
+              Meta.colorTemp = (uint32_t) pIspAWBestimator->out_temp;
+
+              /* Find the index profile for this referenceColorTemp */
+              for (profId = 0; profId < ISP_AWB_COLORTEMP_REF; profId++)
+              {
+                if (pIspAWBestimator->out_temp == IQParamConfig->AWBAlgo.referenceColorTemp[profId])
+                  break;
+              }
+
+              if (profId == ISP_AWB_COLORTEMP_REF)
+              {
+                /* Unknown profile */
+                ret  = ISP_ERR_WB_COLORTEMP;
+              }
+              else
+              {
+                /* Apply Color Conversion */
+                ColorConvConfig.enable = 1;
+                memcpy(ColorConvConfig.coeff, IQParamConfig->AWBAlgo.coeff[profId], sizeof(ColorConvConfig.coeff));
+                ret = ISP_SVC_ISP_SetColorConv(hIsp, &ColorConvConfig);
+
+                /* Apply gain */
+                if (ret == ISP_OK)
+                {
+                  ISPGainConfig.enable = 1;
+                  ISPGainConfig.ispGainR = IQParamConfig->AWBAlgo.ispGainR[profId];
+                  ISPGainConfig.ispGainG = IQParamConfig->AWBAlgo.ispGainG[profId];
+                  ISPGainConfig.ispGainB = IQParamConfig->AWBAlgo.ispGainB[profId];
+                  ret = ISP_SVC_ISP_SetGain(hIsp, &ISPGainConfig);
+                  if (ret == ISP_OK)
+                  {
+                    currentColorTemp = (uint32_t) pIspAWBestimator->out_temp ;
+                    current_awb_profId = profId;
+                  }
+                }
+              }
             }
           }
         }
-      }
+        else
+        {
+          ret = ISP_ERR_ALGO;
+        }
     }
-    else
-    {
-      ret = ISP_ERR_ALGO;
-    }
+
+    /* Decrease counter to limit the number of estimations before reaching convergence */
+    if (skip_stat_check_count > 0) skip_stat_check_count--;
+
+    /* Store history to be able to detect variations*/
+    statsHistory[1][0] = statsHistory[0][0];
+    statsHistory[1][1] = statsHistory[0][1];
+    statsHistory[1][2] = statsHistory[0][2];
+    statsHistory[0][0] = stats.up.averageR;
+    statsHistory[0][1] = stats.up.averageG;
+    statsHistory[0][2] = stats.up.averageB;
+    colorTempHistory[1] = colorTempHistory[0];
+    colorTempHistory[0] = currentColorTemp;
 
     /* Ask for stats */
     ret_stat = ISP_SVC_Stats_GetNext(hIsp, &ISP_Algo_AWB_StatCb, pAlgo, &stats, ISP_STAT_LOC_DOWN,
