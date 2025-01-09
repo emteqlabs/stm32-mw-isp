@@ -63,6 +63,7 @@ typedef enum {
   ISP_CMD_SENSORTESTPATTERN    = 0x19,
   ISP_CMD_SENSORDELAY          = 0x1A,
   ISP_CMD_SENSORDELAYMEASURE   = 0x1B,
+  ISP_CMD_FIRMWARECONFIG       = 0x1C,
   /* Application API commands */
   ISP_CMD_USER_EXPOSURETARGET  = 0x80,
   ISP_CMD_USER_LISTWBREFMODES  = 0x81,
@@ -253,6 +254,12 @@ typedef struct
 typedef struct
 {
   ISP_CMD_HeaderTypeDef header;
+  ISP_FirmwareConfigTypeDef data;
+} ISP_CMD_FirmwareConfigTypeDef;
+
+typedef struct
+{
+  ISP_CMD_HeaderTypeDef header;
   uint8_t enable;
 } ISP_CMD_MetadataOutputTypeDef;
 
@@ -285,6 +292,7 @@ typedef union {
   ISP_CMD_SensorTestPatternTypeDef sensorTestPattern;
   ISP_CMD_SensorDelayTypeDef       sensorDelay;
   ISP_CMD_SensorDelayMeasureTypeDef sensorDelayMeasure;
+  ISP_CMD_FirmwareConfigTypeDef    firmwareConfig;
   ISP_CMD_MetadataOutputTypeDef    metadataOutput;
 } ISP_CMD_TypeDef;
 
@@ -759,6 +767,10 @@ static ISP_StatusTypeDef ISP_CmdParser_GetConfig(ISP_HandleTypeDef *hIsp, uint8_
   case ISP_CMD_SENSORDELAYMEASURE:
     /* Start the sensor delay measure. Answer will be sent later at the end of the measure */
     ISP_SVC_Misc_SensorDelayMeasureStart();
+    break;
+
+  case ISP_CMD_FIRMWARECONFIG:
+    ret = ISP_SVC_Misc_GetFirmwareConfig(&c.firmwareConfig.data);
     break;
 
   case ISP_CMD_METADATA_OUTPUT:

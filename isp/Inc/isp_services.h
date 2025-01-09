@@ -85,6 +85,7 @@ ISP_StatusTypeDef ISP_SVC_Sensor_SetTestPattern(ISP_HandleTypeDef *hIsp, ISP_Sen
 /* Misc services */
 ISP_StatusTypeDef ISP_SVC_Misc_IsDCMIPPReady(ISP_HandleTypeDef *hIsp);
 ISP_StatusTypeDef ISP_SVC_Misc_GetDCMIPPVersion(ISP_HandleTypeDef *hIsp, uint32_t *pMajRev, uint32_t *pMinRev);
+ISP_StatusTypeDef ISP_SVC_Misc_GetFirmwareConfig(ISP_FirmwareConfigTypeDef *pConfig);
 void ISP_SVC_Misc_IncMainFrameId(ISP_HandleTypeDef *hIsp);
 uint32_t ISP_SVC_Misc_GetMainFrameId(ISP_HandleTypeDef *hIsp);
 void ISP_SVC_Misc_IncAncillaryFrameId(ISP_HandleTypeDef *hIsp);

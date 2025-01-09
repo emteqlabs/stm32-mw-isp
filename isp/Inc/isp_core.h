@@ -385,6 +385,18 @@ typedef struct
   uint8_t delay;              /* Sensor delay */
 } ISP_SensorDelayTypeDef;
 
+/* Firmware config. Warning : to add a new member, append it (at then end), never insert it in the middle (or you will die) */
+typedef struct
+{
+  uint32_t nbField;           /* Number of valid fields after that one in this structure */
+  uint32_t rgbOrder;          /* RGB components order in the RGB24 pixel format (0:RGB - 1:BGR) */
+  uint32_t hasStatRemoval;    /* Whether the firmware supports the StatRemoval feature */
+  uint32_t hasGamma;          /* Whether the firmware supports the Gamma Correction feature */
+  uint32_t hasAntiFlicker;    /* Whether the firmware supports the AEC anti flickering feature */
+  uint32_t deviceId;          /* Device Identifier (0:N6 - 1:MP25) */
+  uint32_t uId[3];            /* Unique Identifier (3 x 32 bits) */
+} ISP_FirmwareConfigTypeDef;
+
 /* Meta data will transit through STLINK if validation test is enabled */
 typedef struct
 {

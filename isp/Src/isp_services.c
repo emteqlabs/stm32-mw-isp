@@ -66,6 +66,13 @@ typedef struct {
 } ISP_SVC_StatEngineTypeDef;
 
 /* Private constants ---------------------------------------------------------*/
+#define ISP_SVC_CONFIG_ORDER_RGB      0
+#define ISP_SVC_CONFIG_ORDER_BGR      1
+
+#define ISP_SVC_CONFIG_DEVICE_N6      0x00000000
+#define ISP_SVC_CONFIG_DEVICE_MP25    0x00000001
+#define ISP_SVC_CONFIG_DEVICE_UNKNOWN 0xFFFFFFFF
+
 /* Private macro -------------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 static void To_Shift_Multiplier(uint32_t Factor, uint8_t *pShift, uint8_t *pMultiplier);
@@ -1273,6 +1280,45 @@ ISP_StatusTypeDef ISP_SVC_Misc_IsDCMIPPReady(ISP_HandleTypeDef *hIsp)
   {
     return ISP_ERR_DCMIPP_STATE;
   }
+
+  return ISP_OK;
+}
+
+/**
+  * @brief  ISP_SVC_Misc_GetFirmwareConfig
+  *         Return the firmware config
+  * @param  pConfig: Pointer to the firmware config
+  * @retval operation result
+  */
+ISP_StatusTypeDef ISP_SVC_Misc_GetFirmwareConfig(ISP_FirmwareConfigTypeDef *pConfig)
+{
+  uint32_t devId;
+
+  /* Number of supported fields (RGBOrder, HasStatRemoval, etc..). */
+  pConfig->nbField = 6;
+  /* RGB Order is BGR (1) on STM32N6 and more generally on any MCU using DCMIPP HAL */
+  pConfig->rgbOrder = ISP_SVC_CONFIG_ORDER_BGR;
+  /* StatRemoval, GammaCorrection and AEC antiflickering support status */
+  pConfig->hasStatRemoval = 1;
+  pConfig->hasGamma = 1;
+  pConfig->hasAntiFlicker = 0; /* TODO: set it to 1 as soon as the ongoing dev is available */
+  /* DevideId */
+  switch(HAL_GetDEVID())
+  {
+  case 0x00006200: /* STM32N645xx */
+  case 0x00006000: /* STM32N655xx */
+  case 0x00002200: /* STM32N647xx */
+  case 0x00002000: /* STM32N657xx */
+    devId = ISP_SVC_CONFIG_DEVICE_N6;
+    break;
+  default:
+    devId = ISP_SVC_CONFIG_DEVICE_UNKNOWN;
+  }
+  pConfig->deviceId = devId;
+  /* UID */
+  pConfig->uId[0] = HAL_GetUIDw0();
+  pConfig->uId[1] = HAL_GetUIDw1();
+  pConfig->uId[2] = HAL_GetUIDw2();
 
   return ISP_OK;
 }
