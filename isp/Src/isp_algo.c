@@ -688,6 +688,7 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
   static uint32_t statsHistory[3][3] = { 0 };
   static uint32_t colorTempHistory[2] = { 0 };
   static uint8_t skip_stat_check_count = ALGO_AWB_STAT_CHECK_SKIP_AFTER_INIT;
+  uint8_t stat_has_changed = false;
 
   IQParamConfig = ISP_SVC_IQParam_Get(hIsp);
 
@@ -703,6 +704,7 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
     IQParamConfig->AWBAlgo.enable = true;
     reconfigureRequest = true;
     enableCurrent = true;
+    skip_stat_check_count = ALGO_AWB_STAT_CHECK_SKIP_AFTER_CT_ESTIMATION;
   }
 
   switch(algo->state)
@@ -793,9 +795,15 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
   case ISP_ALGO_STATE_STAT_READY:
     ISP_Algo_GetUpStat(hIsp, &stats);
 
-    if (!(!skip_stat_check_count && (abs(stats.up.averageR - statsHistory[0][0]) <= 2) && (abs(stats.up.averageG - statsHistory[0][1]) <= 2) && (abs(stats.up.averageB - statsHistory[0][2]) <= 2)
-        && (abs(stats.up.averageR - statsHistory[1][0]) <= 2) && (abs(stats.up.averageG - statsHistory[1][1]) <= 2) && (abs(stats.up.averageB - statsHistory[1][2]) <= 2)
-        && (abs(stats.up.averageR - statsHistory[2][0]) <= 2) && (abs(stats.up.averageG - statsHistory[2][1]) <= 2) && (abs(stats.up.averageB - statsHistory[2][2]) <= 2)))
+    for (i = 0; i < 3; i++)
+    {
+      if ((abs(stats.up.averageR - statsHistory[i][0]) > 2) || (abs(stats.up.averageG - statsHistory[i][1]) > 2) || (abs(stats.up.averageB - statsHistory[i][2]) > 2))
+      {
+        stat_has_changed = true;
+      }
+    }
+
+    if (skip_stat_check_count || stat_has_changed)
     {
         statsHistory[2][0] = stats.up.averageR;
         statsHistory[2][1] = stats.up.averageG;
