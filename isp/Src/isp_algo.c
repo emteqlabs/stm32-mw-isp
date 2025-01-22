@@ -304,8 +304,9 @@ ISP_StatusTypeDef ISP_Algo_AEC_Init(void *hIsp, void *pAlgo)
     return ISP_ERR_ALGO;
   }
 
-  /* Configure algo (AEC target) */
+  /* Configure algo (AEC target and anti-flicker setting) */
   pIspAEprocess->hyper_params.target = IQParamConfig->AECAlgo.exposureTarget;
+  pIspAEprocess->hyper_params.compat_freq = IQParamConfig->AECAlgo.antiFlickerFreq;
 
   /* Configure algo (sensor config) */
   pIspAEprocess->hyper_params.exposure_min = pIsp_handle->sensorInfo.exposure_min;
@@ -414,6 +415,10 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
   case ISP_ALGO_STATE_STAT_READY:
     /* Align on the target update (may have been updated with ISP_SetExposureTarget()) */
     pIspAEprocess->hyper_params.target = IQParamConfig->AECAlgo.exposureTarget;
+
+    /* Align on the anti-flicker frequency (may have been updated by IQTune)*/
+    pIspAEprocess->hyper_params.compat_freq = IQParamConfig->AECAlgo.antiFlickerFreq;
+
     avgL = stats.down.averageL;
 #ifdef ALGO_AEC_DBG_LOGS
     if (avgL != currentL)

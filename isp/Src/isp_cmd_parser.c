@@ -506,6 +506,7 @@ static ISP_StatusTypeDef ISP_CmdParser_SetConfig(ISP_HandleTypeDef *hIsp, uint8_
      * so that the algo will consider this update at its next process call
      */
     ret = ISP_SetExposureTarget(hIsp, c.AECAlgo.data.exposureCompensation);
+    IQParamConfig->AECAlgo.antiFlickerFreq = c.AECAlgo.data.antiFlickerFreq;
     break;
 
   case ISP_CMD_AWBALGO:

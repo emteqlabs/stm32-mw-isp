@@ -329,11 +329,19 @@ typedef enum
   EXPOSURE_TARGET_PLUS_2_0_EV  =  4,
 } ISP_ExposureCompTypeDef;
 
+typedef enum
+{
+  ANTIFLICKER_NONE = 0,
+  ANTIFLICKER_50HZ = 50,
+  ANTIFLICKER_60HZ = 60,
+} ISP_AntiFlickerTypeDef;
+
 typedef struct
 {
   uint8_t enable;                               /* Enable or disable */
   ISP_ExposureCompTypeDef exposureCompensation; /* Exposure Compensation (in EV) */
   uint32_t exposureTarget;                      /* Exposure Target */
+  ISP_AntiFlickerTypeDef antiFlickerFreq;       /* AntiFlicker frequency (50Hz, 60Hz  or 0 for disabling the feature */
 } ISP_AECAlgoTypeDef;
 
 #define ISP_AWB_COLORTEMP_REF               (5U)

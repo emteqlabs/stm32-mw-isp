@@ -1301,7 +1301,7 @@ ISP_StatusTypeDef ISP_SVC_Misc_GetFirmwareConfig(ISP_FirmwareConfigTypeDef *pCon
   /* StatRemoval, GammaCorrection and AEC antiflickering support status */
   pConfig->hasStatRemoval = 1;
   pConfig->hasGamma = 1;
-  pConfig->hasAntiFlicker = 0; /* TODO: set it to 1 as soon as the ongoing dev is available */
+  pConfig->hasAntiFlicker = 1;
   /* DevideId */
   switch(HAL_GetDEVID())
   {
