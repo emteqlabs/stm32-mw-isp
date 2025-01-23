@@ -1295,7 +1295,7 @@ ISP_StatusTypeDef ISP_SVC_Misc_GetFirmwareConfig(ISP_FirmwareConfigTypeDef *pCon
   uint32_t devId;
 
   /* Number of supported fields (RGBOrder, HasStatRemoval, etc..). */
-  pConfig->nbField = 6;
+  pConfig->nbField = 7;
   /* RGB Order is BGR (1) on STM32N6 and more generally on any MCU using DCMIPP HAL */
   pConfig->rgbOrder = ISP_SVC_CONFIG_ORDER_BGR;
   /* StatRemoval, GammaCorrection and AEC antiflickering support status */
@@ -1319,7 +1319,8 @@ ISP_StatusTypeDef ISP_SVC_Misc_GetFirmwareConfig(ISP_FirmwareConfigTypeDef *pCon
   pConfig->uId[0] = HAL_GetUIDw0();
   pConfig->uId[1] = HAL_GetUIDw1();
   pConfig->uId[2] = HAL_GetUIDw2();
-
+  /* Sensor Delay support status */
+  pConfig->hasSensorDelay = 1;
   return ISP_OK;
 }
 

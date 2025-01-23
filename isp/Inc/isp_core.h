@@ -395,6 +395,7 @@ typedef struct
   uint32_t hasAntiFlicker;    /* Whether the firmware supports the AEC anti flickering feature */
   uint32_t deviceId;          /* Device Identifier (0:N6 - 1:MP25) */
   uint32_t uId[3];            /* Unique Identifier (3 x 32 bits) */
+  uint32_t hasSensorDelay;    /* Whether the firmware supports the Sensor Delay feature */
 } ISP_FirmwareConfigTypeDef;
 
 /* Meta data will transit through STLINK if validation test is enabled */
