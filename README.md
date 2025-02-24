@@ -18,15 +18,13 @@ ISP_MW_TUNING_TOOL_SUPPORT must be enabled.
 - evision: 2A algorithms that are delivered as binary
 
 ## Enhancements, new features
-- Fix dump issue while using the STM32 ISP IQTune desktop application in a
-  windows environment
-- Fix IAR build warnings
+- Add sensor delay feature that can be manually set or automaticaly computed thanks to the STM32-ISP-IQTune desktop application
+- Statistic area has been remove from init parameter of the ISP_Init() function
+- Fix IAR build warnings in the evision libraries
+- Improve AWB algorithm to avoid flickering between 2 illuminants
 
 ## Known Issues and Limitations
-- In some situations, Auto White Balance (AWB) algorithm can flicker between
-2 AWB profiles\*
-<br>
-\* Fix is under preparation
+- None
 
 ## STM32 ISP IQTune desktop application
 <https://www.st.com/en/development-tools/stm32-isp-iqtune.html>
