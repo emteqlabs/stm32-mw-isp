@@ -392,6 +392,21 @@ typedef struct
   uint8_t delay;              /* Sensor delay */
 } ISP_SensorDelayTypeDef;
 
+typedef struct
+{
+  uint32_t HL_LuxRef;          /* High lux value reference for calibration */
+  uint32_t HL_Expo1;           /* Exposure value of the 1st reference point in high lux condition (in ms) */
+  uint8_t  HL_Lum1;            /* Down luminance value of the 1st reference point in high lux condition */
+  uint32_t HL_Expo2;           /* Exposure value of the 2nd reference point in high lux condition (in ms) */
+  uint8_t  HL_Lum2;            /* Down luminance value of the 2nd reference point in high lux condition */
+  uint32_t LL_LuxRef;          /* Low lux value reference for calibration */
+  uint32_t LL_Expo1;           /* Exposure value of the 1st reference point in low lux condition (in ms) */
+  uint8_t  LL_Lum1;            /* Down luminance value of the 1st reference point in low lux condition */
+  uint32_t LL_Expo2;           /* Exposure value of the 2nd reference point in low lux condition (in ms) */
+  uint8_t  LL_Lum2;            /* Down luminance value of the 2nd reference point in low lux condition */
+  float    calibFactor;        /* Specific sensor calibration factor based on empirical measurements */
+} ISP_LuxReferenceTypedef;
+
 /* Firmware config. Warning : to add a new member, append it (at then end), never insert it in the middle (or you will die) */
 typedef struct
 {
@@ -435,6 +450,7 @@ typedef struct
   ISP_ColorConvTypeDef colorConvStatic;
   ISP_GammaTypeDef gamma;
   ISP_SensorDelayTypeDef sensorDelay;
+  ISP_LuxReferenceTypedef luxRef;
 } ISP_IQParamTypeDef;
 
 /* Exported constants --------------------------------------------------------*/

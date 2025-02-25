@@ -672,3 +672,27 @@ void ISP_OutputMeta(ISP_HandleTypeDef *hIsp)
            hIsp->MainPipe_FrameCount, Meta.averageL, Meta.exposureTarget, Meta.gain, Meta.exposure, Meta.colorTemp);
   }
 }
+
+/**
+ * @brief  ISP_GetLuxEstimation
+ *         Get estimated lux value of the current scene
+ * @param  hIsp: ISP device handle
+ * @param  pLux: Pointer to lux value
+ * @retval Operation status
+ */
+ISP_StatusTypeDef ISP_GetLuxEstimation(ISP_HandleTypeDef *hIsp, uint32_t *pLux)
+{
+  ISP_StatusTypeDef ret = ISP_OK;
+  int32_t lux = ISP_SVC_Misc_GetEstimatedLux(hIsp);
+
+  if ((pLux == NULL) || (lux < 0))
+  {
+    ret = ISP_ERR_EINVAL;
+  }
+  else
+  {
+    *pLux = lux;
+  }
+
+  return ret;
+}

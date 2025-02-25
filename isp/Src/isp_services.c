@@ -2030,3 +2030,88 @@ ISP_StatusTypeDef ISP_SVC_Stats_GetNext(ISP_HandleTypeDef *hIsp, ISP_stat_ready_
 
   return ISP_OK;
 }
+
+/**
+  * @brief  ISP_SVC_Misc_GetEstimatedLux
+  *         Estimate the lux value of the scene captured by the sensor
+  * @param  hIsp: ISP device handle
+  * @retval estimated lux value (-1 if exposure is null, no possible estimation)
+  */
+int32_t ISP_SVC_Misc_GetEstimatedLux(ISP_HandleTypeDef *hIsp)
+{
+  ISP_SensorExposureTypeDef exposureConfig;
+  ISP_SensorGainTypeDef gainConfig;
+  ISP_SVC_StatStateTypeDef stats;
+  ISP_IQParamTypeDef *IQParamConfig;
+  double a, b, globalExposure;
+  int32_t lux;
+  ISP_StatusTypeDef ret = ISP_OK;
+
+  IQParamConfig = ISP_SVC_IQParam_Get(hIsp);
+  ret = ISP_SVC_Sensor_GetExposure(hIsp, &exposureConfig);
+  if (ret != ISP_OK)
+  {
+    return -1;
+  }
+
+  ret = ISP_SVC_Sensor_GetGain(hIsp, &gainConfig);
+  if (ret != ISP_OK)
+  {
+    return -1;
+  }
+
+  ret = ISP_SVC_Stats_GetLatest(hIsp, &stats);
+  if (ret != ISP_OK)
+  {
+    return -1;
+  }
+
+  if ((IQParamConfig->luxRef.HL_Expo1 == IQParamConfig->luxRef.HL_Expo2) ||
+      (IQParamConfig->luxRef.LL_Expo1 == IQParamConfig->luxRef.LL_Expo2) ||
+      (IQParamConfig->luxRef.HL_Lum1 == 0) ||
+      (IQParamConfig->luxRef.LL_Lum1 == 0))
+  {
+	/* Uncalibrated lux reference points */
+    return -1;
+  }
+
+
+  /* Calculate K coefficient value to estimate lux from current luminance and global exposure
+   * K = a * exposure + b;
+   * Lux = calibration_ factor * K * Luminance / exposure
+   */
+
+  /* Calculate a and b with the high lux references */
+  a = (IQParamConfig->luxRef.HL_LuxRef *
+       ((double)IQParamConfig->luxRef.HL_Expo1 / IQParamConfig->luxRef.HL_Lum1 -
+        (double)IQParamConfig->luxRef.HL_Expo2 / IQParamConfig->luxRef.HL_Lum2)) /
+      ((double)IQParamConfig->luxRef.HL_Expo1 - IQParamConfig->luxRef.HL_Expo2);
+
+  b = (IQParamConfig->luxRef.HL_LuxRef  * (double)IQParamConfig->luxRef.HL_Expo1 / IQParamConfig->luxRef.HL_Lum1) -
+      (a * IQParamConfig->luxRef.HL_Expo1);
+
+  globalExposure = exposureConfig.exposure * pow(10, (double)gainConfig.gain / 20000);
+
+  if (globalExposure == 0)
+  {
+    return -1;
+  }
+
+  lux = IQParamConfig->luxRef.calibFactor * (a * globalExposure + b) * stats.down.averageL / globalExposure;
+
+  if (lux <= IQParamConfig->luxRef.LL_LuxRef * 0.9)
+  {
+	/* Calculate a and b with the low lux references to improve precision when lux is under 90% of the LL_LuxRef */
+    a = (IQParamConfig->luxRef.LL_LuxRef *
+         ((double)IQParamConfig->luxRef.LL_Expo1 / IQParamConfig->luxRef.LL_Lum1 -
+          (double)IQParamConfig->luxRef.LL_Expo2 / IQParamConfig->luxRef.LL_Lum2)) /
+        ((double)IQParamConfig->luxRef.LL_Expo1 - IQParamConfig->luxRef.LL_Expo2);
+
+    b = (IQParamConfig->luxRef.LL_LuxRef  * (double)IQParamConfig->luxRef.LL_Expo1 / IQParamConfig->luxRef.LL_Lum1) -
+        (a * IQParamConfig->luxRef.LL_Expo1);
+
+    lux = IQParamConfig->luxRef.calibFactor * (a * globalExposure + b) * stats.down.averageL / globalExposure;
+  }
+
+  return (lux < 0) ? 0 : lux;
+}

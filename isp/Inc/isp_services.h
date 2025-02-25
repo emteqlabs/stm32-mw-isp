@@ -102,6 +102,7 @@ ISP_StatusTypeDef ISP_SVC_Misc_StopPreview(ISP_HandleTypeDef *hIsp);
 ISP_StatusTypeDef ISP_SVC_Misc_StartPreview(ISP_HandleTypeDef *hIsp);
 bool ISP_SVC_Misc_IsGammaEnabled(ISP_HandleTypeDef *hIsp, uint32_t Pipe);
 ISP_StatusTypeDef ISP_SVC_ISP_SetGamma(ISP_HandleTypeDef *hIsp, ISP_GammaTypeDef *pConfig);
+int32_t ISP_SVC_Misc_GetEstimatedLux(ISP_HandleTypeDef *hIsp);
 
 /* Dump services */
 ISP_StatusTypeDef ISP_SVC_Dump_GetFrame(ISP_HandleTypeDef *hIsp, uint32_t **pBuffer, ISP_DumpCfgTypeDef DumpConfig, ISP_DumpFrameMetaTypeDef *pMeta);
