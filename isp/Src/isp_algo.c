@@ -91,6 +91,18 @@ ISP_AlgoTypeDef ISP_Algo_AEC = {
     .DeInit = ISP_Algo_AEC_DeInit,
     .Process = ISP_Algo_AEC_Process,
 };
+
+/* Default hyper parameter of the AEC algorithm */
+#define HYPERPARAM_AEC_TOLERANCE                10      /* Max delta between lum stat and target in convergence region */
+#define HYPERPARAM_AEC_GAIN_INCREMENT_COEFF     100     /* Factor applied to increment gain update */
+#define HYPERPARAM_AEC_GAIN_LOW_DELTA           45      /* Max delta value between lum stat and target in low delta region */
+#define HYPERPARAM_AEC_GAIN_HIGH_DELTA          120     /* Min delta value between lum stat and target in high delta region */
+#define HYPERPARAM_AEC_GAIN_LOW_INC_MAX         1500    /* Maximum gain update value in luminance low delta region */
+#define HYPERPARAM_AEC_GAIN_MEDIUM_INC_MAX      6000    /* Maximum gain update value in luminance medium delta region */
+#define HYPERPARAM_AEC_GAIN_HIGH_INC_MAX        12000   /* Maximum gain update value in luminance high delta region */
+#define HYPERPARAM_AEC_EXPOSURE_UP_RATIO        0.020F  /* Factor applied to increment exposure */
+#define HYPERPARAM_AEC_EXPOSURE_DOWN_RATIO      0.004F  /* Factor applied to decrement exposure */
+#define HYPERPARAM_AEC_DARKZONE_LUM_LIMIT       5       /* Default value for dark zone luminance limit */
 #endif /* ISP_MW_SW_AEC_ALGO_SUPPORT */
 
 #ifdef ISP_MW_SW_AWB_ALGO_SUPPORT
@@ -313,6 +325,18 @@ ISP_StatusTypeDef ISP_Algo_AEC_Init(void *hIsp, void *pAlgo)
   pIspAEprocess->hyper_params.exposure_max = pIsp_handle->sensorInfo.exposure_max;
   pIspAEprocess->hyper_params.gain_min = pIsp_handle->sensorInfo.gain_min;
   pIspAEprocess->hyper_params.gain_max = pIsp_handle->sensorInfo.gain_max;
+
+  /* Force hyper parameters with configuration defined in evision-api-st-ae.h */
+  pIspAEprocess->hyper_params.tolerance = HYPERPARAM_AEC_TOLERANCE;
+  pIspAEprocess->hyper_params.gain_increment_coeff = HYPERPARAM_AEC_GAIN_INCREMENT_COEFF;
+  pIspAEprocess->hyper_params.gain_low_delta = HYPERPARAM_AEC_GAIN_LOW_DELTA;
+  pIspAEprocess->hyper_params.gain_high_delta = HYPERPARAM_AEC_GAIN_HIGH_DELTA;
+  pIspAEprocess->hyper_params.gain_low_increment_max = HYPERPARAM_AEC_GAIN_LOW_INC_MAX;
+  pIspAEprocess->hyper_params.gain_medium_increment_max = HYPERPARAM_AEC_GAIN_MEDIUM_INC_MAX;
+  pIspAEprocess->hyper_params.gain_high_increment_max = HYPERPARAM_AEC_GAIN_HIGH_INC_MAX;
+  pIspAEprocess->hyper_params.exposure_up_ratio = HYPERPARAM_AEC_EXPOSURE_UP_RATIO;
+  pIspAEprocess->hyper_params.exposure_down_ratio = HYPERPARAM_AEC_EXPOSURE_DOWN_RATIO;
+  pIspAEprocess->hyper_params.dark_zone_lum_limit = HYPERPARAM_AEC_DARKZONE_LUM_LIMIT;
 
   /* Initialize exposure and gain at min value */
   if (IQParamConfig->AECAlgo.enable == true)
