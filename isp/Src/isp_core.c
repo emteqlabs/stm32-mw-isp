@@ -34,7 +34,8 @@
 /* Private function prototypes -----------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
-
+/* Global variables ----------------------------------------------------------*/
+  extern ISP_MetaTypeDef Meta;
 /* Exported functions --------------------------------------------------------*/
 /**
   * @brief  ISP_Init
@@ -305,6 +306,7 @@ ISP_StatusTypeDef ISP_Start(ISP_HandleTypeDef *hIsp)
 
   /* Initialize the exposure target based on the selected exposure compensation */
   IQParamConfig->AECAlgo.exposureTarget = (uint32_t) (ISP_IDEAL_TARGET_EXPOSURE * pow(2, (float)IQParamConfig->AECAlgo.exposureCompensation / 2));
+  Meta.exposureTarget = IQParamConfig->AECAlgo.exposureTarget;
 
   return ISP_OK;
 }
@@ -373,6 +375,7 @@ ISP_StatusTypeDef ISP_SetExposureTarget(ISP_HandleTypeDef *hIsp, ISP_ExposureCom
   IQParamConfig = ISP_SVC_IQParam_Get(hIsp);
   IQParamConfig->AECAlgo.exposureCompensation = ExposureCompensation;
   IQParamConfig->AECAlgo.exposureTarget = (uint32_t) (ISP_IDEAL_TARGET_EXPOSURE * pow(2, (float)ExposureCompensation / 2));
+  Meta.exposureTarget = IQParamConfig->AECAlgo.exposureTarget;
 
   return ISP_OK;
 }
@@ -664,8 +667,6 @@ uint32_t ISP_GetDumpFrameId(ISP_HandleTypeDef *hIsp)
   */
 void ISP_OutputMeta(ISP_HandleTypeDef *hIsp)
 {
-  extern ISP_MetaTypeDef Meta;
-
   if (Meta.outputEnable)
   {
     printf("Meta[%"PRIu32"]: L = %"PRIu16", TG = %"PRIu32", G = %"PRIu32", E = %"PRIu32", CT = %"PRIu32"\r\n",

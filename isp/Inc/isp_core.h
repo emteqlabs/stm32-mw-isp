@@ -430,6 +430,7 @@ typedef struct
   uint32_t gain;              /* Gain in mdB */
   uint32_t exposure;          /* Exposure time in micro seconds */
   uint32_t colorTemp;
+  uint32_t lux;
 } ISP_MetaTypeDef;
 
 /* IQ parameter */

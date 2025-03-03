@@ -20,9 +20,10 @@
 #include "isp_core.h"
 #include "isp_algo.h"
 #include "isp_services.h"
-#include "evision-api-st-ae.h"
 #include "evision-api-awb.h"
 #include "evision-api-utils.h"
+#include "isp_awb_algo.h"
+#include "isp_ae_algo.h"
 #include <limits.h>
 #include <math.h>
 #include <inttypes.h>
@@ -92,18 +93,6 @@ ISP_AlgoTypeDef ISP_Algo_AEC = {
     .DeInit = ISP_Algo_AEC_DeInit,
     .Process = ISP_Algo_AEC_Process,
 };
-
-/* Default hyper parameter of the AEC algorithm */
-#define HYPERPARAM_AEC_TOLERANCE                10      /* Max delta between lum stat and target in convergence region */
-#define HYPERPARAM_AEC_GAIN_INCREMENT_COEFF     100     /* Factor applied to increment gain update */
-#define HYPERPARAM_AEC_GAIN_LOW_DELTA           45      /* Max delta value between lum stat and target in low delta region */
-#define HYPERPARAM_AEC_GAIN_HIGH_DELTA          120     /* Min delta value between lum stat and target in high delta region */
-#define HYPERPARAM_AEC_GAIN_LOW_INC_MAX         1500    /* Maximum gain update value in luminance low delta region */
-#define HYPERPARAM_AEC_GAIN_MEDIUM_INC_MAX      6000    /* Maximum gain update value in luminance medium delta region */
-#define HYPERPARAM_AEC_GAIN_HIGH_INC_MAX        12000   /* Maximum gain update value in luminance high delta region */
-#define HYPERPARAM_AEC_EXPOSURE_UP_RATIO        0.020F  /* Factor applied to increment exposure */
-#define HYPERPARAM_AEC_EXPOSURE_DOWN_RATIO      0.004F  /* Factor applied to decrement exposure */
-#define HYPERPARAM_AEC_DARKZONE_LUM_LIMIT       5       /* Default value for dark zone luminance limit */
 #endif /* ISP_MW_SW_AEC_ALGO_SUPPORT */
 
 #ifdef ISP_MW_SW_AWB_ALGO_SUPPORT
@@ -146,11 +135,6 @@ ISP_AlgoTypeDef *ISP_Algo_List[] = {
     &ISP_Algo_SensorDelay,
 #endif /* ISP_MW_TUNING_TOOL_SUPPORT */
 };
-
-#ifdef ISP_MW_SW_AEC_ALGO_SUPPORT
-/* Algo internal */
-static evision_st_ae_process_t *pIspAEprocess;
-#endif /* ISP_MW_SW_AEC_ALGO_SUPPORT */
 
 #ifdef ISP_MW_SW_AWB_ALGO_SUPPORT
 /* Algo internal */
@@ -269,14 +253,6 @@ ISP_StatusTypeDef ISP_Algo_BadPixel_Process(void *hIsp, void *pAlgo)
   return ISP_OK;
 }
 
-#if defined(ISP_MW_SW_AEC_ALGO_SUPPORT) || defined(ISP_MW_SW_AWB_ALGO_SUPPORT)
-static void log_cb(const char *const msg)
-{
-  printf("%s", msg);
-  printf("\r\n");
-}
-#endif
-
 #ifdef ISP_MW_SW_AEC_ALGO_SUPPORT
 /**
   * @brief  ISP_Algo_AEC_Init
@@ -292,7 +268,6 @@ ISP_StatusTypeDef ISP_Algo_AEC_Init(void *hIsp, void *pAlgo)
   ISP_SensorExposureTypeDef exposureConfig;
   ISP_SensorGainTypeDef gainConfig;
   ISP_IQParamTypeDef *IQParamConfig;
-  evision_return_t e_ret;
 
   IQParamConfig = ISP_SVC_IQParam_Get(hIsp);
 
@@ -302,42 +277,7 @@ ISP_StatusTypeDef ISP_Algo_AEC_Init(void *hIsp, void *pAlgo)
     IQParamConfig->sensorDelay.delay = 1;
   }
 
-  /* Create st_ae_process instance */
-  pIspAEprocess = evision_api_st_ae_new(log_cb);
-  if (pIspAEprocess == NULL)
-  {
-    return ISP_ERR_ALGO;
-  }
-
-  /* Initialize st_ae_process instance */
-  e_ret = evision_api_st_ae_init(pIspAEprocess);
-  if (e_ret != EVISION_RET_SUCCESS)
-  {
-    evision_api_st_ae_delete(pIspAEprocess);
-    return ISP_ERR_ALGO;
-  }
-
-  /* Configure algo (AEC target and anti-flicker setting) */
-  pIspAEprocess->hyper_params.target = IQParamConfig->AECAlgo.exposureTarget;
-  pIspAEprocess->hyper_params.compat_freq = IQParamConfig->AECAlgo.antiFlickerFreq;
-
-  /* Configure algo (sensor config) */
-  pIspAEprocess->hyper_params.exposure_min = pIsp_handle->sensorInfo.exposure_min;
-  pIspAEprocess->hyper_params.exposure_max = pIsp_handle->sensorInfo.exposure_max;
-  pIspAEprocess->hyper_params.gain_min = pIsp_handle->sensorInfo.gain_min;
-  pIspAEprocess->hyper_params.gain_max = pIsp_handle->sensorInfo.gain_max;
-
-  /* Force hyper parameters with configuration defined in evision-api-st-ae.h */
-  pIspAEprocess->hyper_params.tolerance = HYPERPARAM_AEC_TOLERANCE;
-  pIspAEprocess->hyper_params.gain_increment_coeff = HYPERPARAM_AEC_GAIN_INCREMENT_COEFF;
-  pIspAEprocess->hyper_params.gain_low_delta = HYPERPARAM_AEC_GAIN_LOW_DELTA;
-  pIspAEprocess->hyper_params.gain_high_delta = HYPERPARAM_AEC_GAIN_HIGH_DELTA;
-  pIspAEprocess->hyper_params.gain_low_increment_max = HYPERPARAM_AEC_GAIN_LOW_INC_MAX;
-  pIspAEprocess->hyper_params.gain_medium_increment_max = HYPERPARAM_AEC_GAIN_MEDIUM_INC_MAX;
-  pIspAEprocess->hyper_params.gain_high_increment_max = HYPERPARAM_AEC_GAIN_HIGH_INC_MAX;
-  pIspAEprocess->hyper_params.exposure_up_ratio = HYPERPARAM_AEC_EXPOSURE_UP_RATIO;
-  pIspAEprocess->hyper_params.exposure_down_ratio = HYPERPARAM_AEC_EXPOSURE_DOWN_RATIO;
-  pIspAEprocess->hyper_params.dark_zone_lum_limit = HYPERPARAM_AEC_DARKZONE_LUM_LIMIT;
+  isp_ae_init(pIsp_handle);
 
   /* Initialize exposure and gain at min value */
   if (IQParamConfig->AECAlgo.enable == true)
@@ -368,10 +308,6 @@ ISP_StatusTypeDef ISP_Algo_AEC_DeInit(void *hIsp, void *pAlgo)
   (void)hIsp; /* unused */
   (void)pAlgo; /* unused */
 
-  if (pIspAEprocess != NULL)
-  {
-    evision_api_st_ae_delete(pIspAEprocess);
-  }
   return ISP_OK;
 }
 
@@ -405,11 +341,11 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
   ISP_StatusTypeDef ret = ISP_OK;
   ISP_SensorGainTypeDef gainConfig;
   ISP_SensorExposureTypeDef exposureConfig;
-  uint32_t avgL;
+  uint32_t avgL, newExposure, newGain;
 #ifdef ALGO_AEC_DBG_LOGS
   static uint32_t currentL;
 #endif
-  evision_return_t e_ret;
+  int32_t estimated_lux;
 
   IQParamConfig = ISP_SVC_IQParam_Get(hIsp);
   if (IQParamConfig->AECAlgo.enable == false)
@@ -438,11 +374,7 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
     break;
 
   case ISP_ALGO_STATE_STAT_READY:
-    /* Align on the target update (may have been updated with ISP_SetExposureTarget()) */
-    pIspAEprocess->hyper_params.target = IQParamConfig->AECAlgo.exposureTarget;
-
-    /* Align on the anti-flicker frequency (may have been updated by IQTune)*/
-    pIspAEprocess->hyper_params.compat_freq = IQParamConfig->AECAlgo.antiFlickerFreq;
+    /* TODO Handle Antiflicker */
 
     avgL = stats.down.averageL;
 #ifdef ALGO_AEC_DBG_LOGS
@@ -465,20 +397,21 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
       return ret;
     }
 
-    /* Store meta data */
-    Meta.averageL = (uint8_t)avgL;
-    Meta.exposureTarget = IQParamConfig->AECAlgo.exposureTarget;
+    estimated_lux = ISP_SVC_Misc_GetEstimatedLux(hIsp);
 
-    /* Run algo to calculate new gain and exposure */
-    e_ret = evision_api_st_ae_process(pIspAEprocess, gainConfig.gain, exposureConfig.exposure, (uint8_t)avgL);
-    if (e_ret == EVISION_RET_SUCCESS)
+#ifdef ALGO_AEC_DBG_LOGS
+    printf("Lux = %ld, L = %lu, E = %ld, G = %ld\r\n", estimated_lux, avgL, exposureConfig.exposure, gainConfig.gain);
+#endif
+
+    if (estimated_lux >= 0)
     {
-      if (gainConfig.gain != pIspAEprocess->new_gain)
+      get_new_exposure((uint32_t)estimated_lux, avgL, &newExposure, &newGain, exposureConfig.exposure, gainConfig.gain);
+      if (gainConfig.gain != newGain)
       {
         /* Set new gain */
-        gainConfig.gain = pIspAEprocess->new_gain;
+        gainConfig.gain = newGain;
 
-        ret = ISP_SVC_Sensor_SetGain(hIsp, &gainConfig);
+       ret = ISP_SVC_Sensor_SetGain(hIsp, &gainConfig);
         if (ret != ISP_OK)
         {
           return ret;
@@ -489,10 +422,10 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
 #endif
       }
 
-      if (exposureConfig.exposure != pIspAEprocess->new_exposure)
+      if (exposureConfig.exposure != newExposure)
       {
         /* Set new exposure */
-        exposureConfig.exposure = pIspAEprocess->new_exposure;
+        exposureConfig.exposure = newExposure;
 
         ret = ISP_SVC_Sensor_SetExposure(hIsp, &exposureConfig);
         if (ret != ISP_OK)
@@ -504,6 +437,11 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
         printf("New exposure = %"PRIu32"\r\n", exposureConfig.exposure);
 #endif
       }
+    }
+    else
+    {
+    	ret = ISP_ERR_ALGO;
+    	printf("ERROR: Lux value of the scene cannot be estimated\r\n");
     }
 
     /* Ask for stats */
@@ -646,13 +584,6 @@ ISP_StatusTypeDef ISP_Algo_AWB_Init(void *hIsp, void *pAlgo)
   (void)hIsp; /* unused */
   ISP_AlgoTypeDef *algo = (ISP_AlgoTypeDef *)pAlgo;
 
-  /* Create estimator */
-  pIspAWBestimator = evision_api_awb_new(log_cb);
-  if (pIspAWBestimator == NULL)
-  {
-    return ISP_ERR_ALGO;
-  }
-
   /* Continue the initialization in ISP_Algo_AWB_Process() function when state is ISP_ALGO_STATE_INIT.
    * This allows to read the IQ params after an algo stop/start cycle */
   algo->state = ISP_ALGO_STATE_INIT;
@@ -671,11 +602,6 @@ ISP_StatusTypeDef ISP_Algo_AWB_DeInit(void *hIsp, void *pAlgo)
 {
   (void)hIsp; /* unused */
   (void)pAlgo; /* unused */
-
-  if (pIspAWBestimator != NULL)
-  {
-    evision_api_awb_delete(pIspAWBestimator);
-  }
 
   return ISP_OK;
 }

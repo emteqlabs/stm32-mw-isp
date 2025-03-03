@@ -1751,8 +1751,8 @@ void ISP_SVC_Stats_Gather(ISP_HandleTypeDef *hIsp)
     {
       ongoing->down.averageL = LuminanceFromRGB(ongoing->down.averageR, ongoing->down.averageG, ongoing->down.averageB);
     }
+    Meta.averageL = ongoing->down.averageL;
     break;
-
   case ISP_STAT_CFG_DOWN_BINS_0_2:
     ReadStatHistogram(hIsp, &ongoing->down.histogram[0]);
     break;
@@ -2094,7 +2094,7 @@ int32_t ISP_SVC_Misc_GetEstimatedLux(ISP_HandleTypeDef *hIsp)
 
   if (globalExposure == 0)
   {
-    return -1;
+    return 0;
   }
 
   lux = IQParamConfig->luxRef.calibFactor * (a * globalExposure + b) * stats.down.averageL / globalExposure;
@@ -2112,6 +2112,8 @@ int32_t ISP_SVC_Misc_GetEstimatedLux(ISP_HandleTypeDef *hIsp)
 
     lux = IQParamConfig->luxRef.calibFactor * (a * globalExposure + b) * stats.down.averageL / globalExposure;
   }
+
+  Meta.lux = (lux < 0) ? 0 : lux;
 
   return (lux < 0) ? 0 : lux;
 }
