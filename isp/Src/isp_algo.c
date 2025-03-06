@@ -832,7 +832,7 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
       }
     }
 
-    if (skip_stat_check_count || stat_has_changed)
+    if (skip_stat_check_count || stat_has_changed || reconfigureRequest)
     {
         statsHistory[2][0] = stats.up.averageR;
         statsHistory[2][1] = stats.up.averageG;
@@ -884,8 +884,6 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
 #endif
           if (pIspAWBestimator->out_temp != currentColorTemp || reconfigureRequest == true)
           {
-            /* Force to apply a WB profile when reconfigureRequest is true */
-            reconfigureRequest = false;
 #ifdef ALGO_AWB_DBG_LOGS
             printf("Color temperature = %ld\r\n", (uint32_t) pIspAWBestimator->out_temp);
 #endif
@@ -942,6 +940,9 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
           ret = ISP_ERR_ALGO;
         }
     }
+
+    /* Reset reconfigureRequest */
+    reconfigureRequest = false;
 
     /* Decrease counter to limit the number of estimations before reaching convergence */
     if (skip_stat_check_count > 0) skip_stat_check_count--;
