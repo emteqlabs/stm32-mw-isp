@@ -1295,12 +1295,13 @@ ISP_StatusTypeDef ISP_SVC_Misc_GetFirmwareConfig(ISP_FirmwareConfigTypeDef *pCon
   uint32_t devId;
 
   /* Number of supported fields (RGBOrder, HasStatRemoval, etc..). */
-  pConfig->nbField = 7;
+  pConfig->nbField = 8;
   /* RGB Order is BGR (1) on STM32N6 and more generally on any MCU using DCMIPP HAL */
   pConfig->rgbOrder = ISP_SVC_CONFIG_ORDER_BGR;
   /* StatRemoval, GammaCorrection and AEC antiflickering support status */
   pConfig->hasStatRemoval = 1;
-  pConfig->hasGamma = 1;
+  pConfig->hasGamma = 0;
+  pConfig->hasUniqueGamma = 1;
   pConfig->hasAntiFlicker = 1;
   /* DevideId */
   switch(HAL_GetDEVID())
@@ -1561,9 +1562,13 @@ ISP_StatusTypeDef ISP_SVC_ISP_SetGamma(ISP_HandleTypeDef *hIsp, ISP_GammaTypeDef
     return ISP_ERR_DCMIPP_GAMMA;
   }
 
-  if (pConfig->enablePipe1 == 0)
+  if (pConfig->enable == 0)
   {
     if (HAL_DCMIPP_PIPE_DisableGammaConversion(hIsp->hDcmipp, DCMIPP_PIPE1) != HAL_OK)
+    {
+      return ISP_ERR_DCMIPP_GAMMA;
+    }
+    if (HAL_DCMIPP_PIPE_DisableGammaConversion(hIsp->hDcmipp, DCMIPP_PIPE2) != HAL_OK)
     {
       return ISP_ERR_DCMIPP_GAMMA;
     }
@@ -1574,17 +1579,6 @@ ISP_StatusTypeDef ISP_SVC_ISP_SetGamma(ISP_HandleTypeDef *hIsp, ISP_GammaTypeDef
     {
       return ISP_ERR_DCMIPP_GAMMA;
     }
-  }
-
-  if (pConfig->enablePipe2 == 0)
-  {
-    if (HAL_DCMIPP_PIPE_DisableGammaConversion(hIsp->hDcmipp, DCMIPP_PIPE2) != HAL_OK)
-    {
-      return ISP_ERR_DCMIPP_GAMMA;
-    }
-  }
-  else
-  {
     if (HAL_DCMIPP_PIPE_EnableGammaConversion(hIsp->hDcmipp, DCMIPP_PIPE2) != HAL_OK)
     {
       return ISP_ERR_DCMIPP_GAMMA;

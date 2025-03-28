@@ -64,6 +64,7 @@ typedef enum {
   ISP_CMD_SENSORDELAY          = 0x1A,
   ISP_CMD_SENSORDELAYMEASURE   = 0x1B,
   ISP_CMD_FIRMWARECONFIG       = 0x1C,
+  ISP_CMD_UNIQUE_GAMMA         = 0x1D,
   /* Application API commands */
   ISP_CMD_USER_EXPOSURETARGET  = 0x80,
   ISP_CMD_USER_LISTWBREFMODES  = 0x81,
@@ -574,6 +575,11 @@ static ISP_StatusTypeDef ISP_CmdParser_SetConfig(ISP_HandleTypeDef *hIsp, uint8_
     break;
 
   case ISP_CMD_GAMMA:
+    /* This command is deprecated since unique gamma command is now available */
+    ret = ISP_ERR_CMDPARSER_COMMAND;
+    break;
+
+  case ISP_CMD_UNIQUE_GAMMA:
     /* Update both ISP and IQ params */
     ret = ISP_SVC_ISP_SetGamma(hIsp, &c.gamma.data);
     if (ret == ISP_OK)
@@ -754,6 +760,11 @@ static ISP_StatusTypeDef ISP_CmdParser_GetConfig(ISP_HandleTypeDef *hIsp, uint8_
     break;
 
   case ISP_CMD_GAMMA:
+    /* This command is deprecated since unique gamma command is now available */
+    ret = ISP_ERR_CMDPARSER_COMMAND;
+    break;
+
+  case ISP_CMD_UNIQUE_GAMMA:
     c.gamma.data = IQParamConfig->gamma;
     break;
 

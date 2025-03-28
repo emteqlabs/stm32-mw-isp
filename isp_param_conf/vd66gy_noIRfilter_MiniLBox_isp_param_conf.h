@@ -105,8 +105,7 @@ static const ISP_IQParamTypeDef ISP_IQParamCacheInit_VD66GY = {
         .YSize = 682,
     },
     .gamma = {
-        .enablePipe1 = 1,
-        .enablePipe2 = 1,
+        .enable = 1,
     },
 };
 
