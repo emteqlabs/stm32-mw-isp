@@ -374,8 +374,6 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
     break;
 
   case ISP_ALGO_STATE_STAT_READY:
-    /* TODO Handle Antiflicker */
-
     avgL = stats.down.averageL;
 #ifdef ALGO_AEC_DBG_LOGS
     if (avgL != currentL)

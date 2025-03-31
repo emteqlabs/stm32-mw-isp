@@ -22,8 +22,8 @@
 
 /* Private types -------------------------------------------------------------*/
 /* Private constants ---------------------------------------------------------*/
-#define AE_FINE_TOLERANCE                 5
-#define AE_FINE_TOLERANCE_LOW_LUX(target) ((target) < 15 ? 8 : 10)
+#define AE_FINE_TOLERANCE                   5
+#define AE_FINE_TOLERANCE_LOW_LUX(target)   ((target) < 15 ? 8 : 10)
 #define AE_COARSE_TOLERANCE                 10
 #define AE_COARSE_TOLERANCE_LOW_LUX(target) ((target) < 15 ? 10 : 15)
 #define AE_TOLERANCE                        0.10  /* % */
@@ -86,20 +86,92 @@ void isp_ae_init(ISP_HandleTypeDef *hIsp)
   }
 }
 
-void get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposure, uint32_t *pGain, uint32_t curExposure, uint32_t curGain)
+static void isp_ae__get_gain_expo_multiple(uint32_t gain, uint32_t exposure,
+                                           uint32_t *equiv_gain, uint32_t *equiv_exposure)
+{
+  /* Get equivalent gain/exposure where exposure is a multiple of the flickering period */
+  float compensation_gain;
+  uint32_t compensation_gain_mdb, compat_period_us;
+  uint32_t up_equiv_exposure;
+
+  if (IQParamConfig->AECAlgo.antiFlickerFreq == 0)
+  {
+    *equiv_gain = gain;
+    *equiv_exposure = exposure;
+    return;
+  }
+
+  compat_period_us = 1000 * 1000 / (2 * IQParamConfig->AECAlgo.antiFlickerFreq);
+  up_equiv_exposure = (1 + exposure / compat_period_us) * compat_period_us;
+  if ((exposure > compat_period_us) && (exposure <  0.95F * up_equiv_exposure))
+  {
+    /* Make exposure a multiple of the flickering period in case exposure is higher than the
+       flickering period and we are 5% under a multiple value */
+    *equiv_exposure = (exposure / compat_period_us) * compat_period_us;
+
+    /* Increase the gain accordingly */
+    compensation_gain = (float)exposure / (float)(*equiv_exposure + 1);
+    compensation_gain_mdb = (uint32_t)(20 * 1000 * log10(compensation_gain));
+    *equiv_gain = gain + compensation_gain_mdb;
+    if (*equiv_gain > pSensorInfo->gain_max)
+    {
+      *equiv_gain = pSensorInfo->gain_max;
+    }
+  }
+  else
+  {
+    /* Keep the initial values in case:
+       - We cannot update the exposure because the values are under the flickering period (will flicker)
+       - Or we are close to the upper multiple value (the acceptance criteria is set to 95% of the
+         mutliple value to ensure no flickering effect will be visible) */
+    *equiv_gain = gain;
+    *equiv_exposure = exposure;
+  }
+}
+
+static void isp_ae_get_gain_expo_maximized(uint32_t gain, uint32_t exposure,
+                                           uint32_t *equiv_gain, uint32_t *equiv_exposure)
+{
+  /* Get equivalent gain/exposure where exposure has a maximum value (inverse processing of the above function) */
+  float compensation_gain;
+  uint32_t global_exposure;
+
+  global_exposure = (uint32_t)(exposure * pow(10, (float)gain / (20 * 1000)));
+  if (global_exposure < pSensorInfo->exposure_max)
+  {
+    *equiv_gain = 0;
+    *equiv_exposure = global_exposure;
+    /* Fix rounding error when close to max value */
+    if (*equiv_exposure > 0.98F * pSensorInfo->exposure_max)
+    {
+      *equiv_exposure = pSensorInfo->exposure_max;
+    }
+  }
+  else
+  {
+    /* Set exposure to max, and compute the compensation gain */
+    *equiv_exposure = pSensorInfo->exposure_max;
+    /* Increase the gain accordingly */
+    compensation_gain = (float)global_exposure / (float)*equiv_exposure;
+    *equiv_gain = (uint32_t)(20 * 1000 * log10(compensation_gain));
+  }
+}
+
+void get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposure, uint32_t *pGain, uint32_t exposure, uint32_t gain)
 {
   double a, b, c, d;
-  double cur_global_exposure = curExposure * pow(10, (double)curGain / 20000);
+  double cur_global_exposure = exposure * pow(10, (double)gain / 20000);
   double new_global_exposure;
   uint32_t custom_low_lux_limit = ((uint32_t)(((double)IQParamConfig->AECAlgo.exposureTarget * IQParamConfig->luxRef.calibFactor * (IQParamConfig->luxRef.LL_LuxRef *
           ((double)IQParamConfig->luxRef.LL_Expo1 / IQParamConfig->luxRef.LL_Lum1 -
            (double)IQParamConfig->luxRef.LL_Expo2 / IQParamConfig->luxRef.LL_Lum2) /
           ((double)IQParamConfig->luxRef.LL_Expo1 - IQParamConfig->luxRef.LL_Expo2))) / AE_LOW_LUX_LIMIT) + 1) * AE_LOW_LUX_LIMIT;
+  uint32_t curExposure, curGain, compatPeriod_us;
 
   /* Handle start conditions */
-  if ((averageL <= 5) && curExposure == pSensorInfo->exposure_min && curGain == pSensorInfo->gain_min)
+  if ((averageL <= 5) && exposure == pSensorInfo->exposure_min && gain == pSensorInfo->gain_min)
   {
-    new_global_exposure = curGain ? curExposure * pow(10, ((double)curGain + 3000) / 20000) : curExposure + 2000;
+    new_global_exposure = gain ? exposure * pow(10, ((double)gain + 3000) / 20000) : exposure + 2000;
     if (new_global_exposure <= pSensorInfo->exposure_max)
     {
       *pGain = 0;
@@ -113,6 +185,9 @@ void get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposure, uint
     }
     return;
   }
+
+  /* Get equivalent sensor gain/exposure where exposure is at its max possible value */
+  isp_ae_get_gain_expo_maximized(gain, exposure, &curGain, &curExposure);
 
   /* Check if coarse convergence is reached */
   if (((lux > AE_LOW_LUX_LIMIT) && (abs(averageL - IQParamConfig->AECAlgo.exposureTarget) > MAX((float)IQParamConfig->AECAlgo.exposureTarget * AE_TOLERANCE, AE_COARSE_TOLERANCE))) ||
@@ -312,6 +387,11 @@ void get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposure, uint
       *pGain = curGain;
     }
   }
+
+  /* Consider flickering period constraint */
+  isp_ae__get_gain_expo_multiple(*pGain, *pExposure, &curGain, &curExposure);
+  *pExposure = curExposure;
+  *pGain = curGain;
 
   previous_lux = lux;
 }
