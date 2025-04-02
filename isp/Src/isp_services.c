@@ -2032,6 +2032,46 @@ ISP_StatusTypeDef ISP_SVC_Stats_GetNext(ISP_HandleTypeDef *hIsp, ISP_stat_ready_
 }
 
 /**
+  * @brief  ISP_SVC_Stats_EvaluateUp
+  *         Evaluate average Up statistics from Down statistics by reverting ISP Gain and Black level
+  * @param  hIsp:  ISP device handle.
+  * @param  pDownStats: pointer to the input Down statistics
+  * @param  pUpStats:   pointer to the output Up statistics
+  */
+ISP_StatusTypeDef ISP_SVC_Stats_EvaluateUp(ISP_HandleTypeDef *hIsp, ISP_StatisticsTypeDef *pDownStats, ISP_StatisticsTypeDef *pUpStats)
+{
+  ISP_ISPGainTypeDef ISPGain;
+  ISP_BlackLevelTypeDef BlackLevel;
+  double upR, upG, upB;
+
+  upR = (double)pDownStats->averageR;
+  upG = (double)pDownStats->averageG;
+  upB = (double)pDownStats->averageB;
+
+  if ((ISP_SVC_ISP_GetGain(hIsp, &ISPGain) == ISP_OK) && ISPGain.enable && ISPGain.ispGainR && ISPGain.ispGainG && ISPGain.ispGainR)
+  {
+    /* Revert gain */
+    upR *= (double)ISP_GAIN_PRECISION_FACTOR / ISPGain.ispGainR;
+    upG *= (double)ISP_GAIN_PRECISION_FACTOR / ISPGain.ispGainG;
+    upB *= (double)ISP_GAIN_PRECISION_FACTOR / ISPGain.ispGainB;
+  }
+
+  if ((ISP_SVC_ISP_GetBlackLevel(hIsp, &BlackLevel) == ISP_OK) && BlackLevel.enable)
+  {
+    /* Revert black level compensation */
+    upR += BlackLevel.BLCR;
+    upG += BlackLevel.BLCG;
+    upB += BlackLevel.BLCB;
+  }
+
+  pUpStats->averageR = (uint8_t)(upR > 255 ? 255 : upR);
+  pUpStats->averageG = (uint8_t)(upG > 255 ? 255 : upG);
+  pUpStats->averageB = (uint8_t)(upB > 255 ? 255 : upB);
+
+  return ISP_OK;
+}
+
+/**
   * @brief  ISP_SVC_Misc_GetEstimatedLux
   *         Estimate the lux value of the scene captured by the sensor
   * @param  hIsp: ISP device handle

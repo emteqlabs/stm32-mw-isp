@@ -15,7 +15,6 @@ ISP_MW_TUNING_TOOL_SUPPORT must be enabled.
 ## Structure
 - isp: core of the ISP Library with the ISP parameter configuration
 - isp_param_conf: collection of sensor tuning parameters
-- evision: 2A algorithms that are delivered as binary
 
 ## Enhancements, new features
 - Update gamma feature to unique gamma

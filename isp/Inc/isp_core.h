@@ -81,6 +81,7 @@ typedef enum
   ISP_ERR_APP_HELPER_UNDEFINED  = 180,
   ISP_ERR_ALGO                  = 190,
   ISP_ERR_SENSORTESTPATTERN     = 200,
+  ISP_ERR_AWB                   = 210,
 } ISP_StatusTypeDef;
 
 /* ISP statistic area */
@@ -355,6 +356,7 @@ typedef struct
   uint32_t ispGainG[ISP_AWB_COLORTEMP_REF];   /* Array of gains of the green component */
   uint32_t ispGainB[ISP_AWB_COLORTEMP_REF];   /* Array of gains of the blue component */
   int32_t coeff[ISP_AWB_COLORTEMP_REF][3][3]; /* Array of 3x3 RGB to RGB matrix coefficients. Unit = 100000000 for "x1.0", -150000000 for "x-1.5". Range is "x-4.0" to "x4.0" */
+  uint8_t referenceRGB[ISP_AWB_COLORTEMP_REF][3]; /* Array of reference RGB components */
 } ISP_AWBAlgoTypeDef;
 
 typedef struct

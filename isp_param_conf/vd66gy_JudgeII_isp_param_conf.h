@@ -85,6 +85,13 @@ static const ISP_IQParamTypeDef ISP_IQParamCacheInit_VD66GY = {
             { { 0, 0, 0, }, { 0, 0, 0, }, { 0, 0, 0, }, },
             { { 0, 0, 0, }, { 0, 0, 0, }, { 0, 0, 0, }, },
         },
+        .referenceRGB = {
+            { 0, 0, 0 },
+            { 0, 0, 0 },
+            { 0, 0, 0 },
+            { 0, 0, 0 },
+            { 0, 0, 0 },
+        },
     },
     .contrast = {
         .enable = 0,

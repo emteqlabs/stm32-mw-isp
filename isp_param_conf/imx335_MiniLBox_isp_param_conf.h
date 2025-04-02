@@ -85,6 +85,13 @@ static const ISP_IQParamTypeDef ISP_IQParamCacheInit_IMX335 = {
             { { 0, 0, 0, }, { 0, 0, 0, }, { 0, 0, 0, }, },
             { { 0, 0, 0, }, { 0, 0, 0, }, { 0, 0, 0, }, },
         },
+        .referenceRGB = {
+            { 61, 66, 27 },
+            { 49, 65, 34 },
+            { 39, 66, 42 },
+            { 0, 0, 0 },
+            { 0, 0, 0 },
+        },
     },
     .contrast = {
         .enable = 0,
