@@ -22,7 +22,6 @@
 #include "isp_services.h"
 #include "evision-api-awb.h"
 #include "evision-api-utils.h"
-#include "isp_awb_algo.h"
 #include "isp_ae_algo.h"
 #include <limits.h>
 #include <math.h>

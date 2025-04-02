@@ -166,7 +166,7 @@ void get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposure, uint
           ((double)IQParamConfig->luxRef.LL_Expo1 / IQParamConfig->luxRef.LL_Lum1 -
            (double)IQParamConfig->luxRef.LL_Expo2 / IQParamConfig->luxRef.LL_Lum2) /
           ((double)IQParamConfig->luxRef.LL_Expo1 - IQParamConfig->luxRef.LL_Expo2))) / AE_LOW_LUX_LIMIT) + 1) * AE_LOW_LUX_LIMIT;
-  uint32_t curExposure, curGain, compatPeriod_us;
+  uint32_t curExposure, curGain;
 
   /* Handle start conditions */
   if ((averageL <= 5) && exposure == pSensorInfo->exposure_min && gain == pSensorInfo->gain_min)
