@@ -31,10 +31,10 @@
 
 #define AE_LOW_LUX_LIMIT                    50    /* lux */
 
-#define AE_EXPOSURE_COARSE_INCREMENT        500   /* ms */
-#define AE_EXPOSURE_COARSE_DECREMENT        300   /* ms */
-#define AE_EXPOSURE_FINE_INCREMENT          150   /* ms */
-#define AE_EXPOSURE_FINE_DECREMENT          100   /* ms */
+#define AE_EXPOSURE_COARSE_INCREMENT        500   /* us */
+#define AE_EXPOSURE_COARSE_DECREMENT        300   /* us */
+#define AE_EXPOSURE_FINE_INCREMENT          150   /* us */
+#define AE_EXPOSURE_FINE_DECREMENT          100   /* us */
 
 #define AE_GAIN_COARSE_INCREMENT            2000  /* mdB */
 #define AE_GAIN_COARSE_DECREMENT            1500  /* mdB */

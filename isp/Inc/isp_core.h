@@ -397,14 +397,14 @@ typedef struct
 typedef struct
 {
   uint32_t HL_LuxRef;          /* High lux value reference for calibration */
-  uint32_t HL_Expo1;           /* Exposure value of the 1st reference point in high lux condition (in ms) */
+  uint32_t HL_Expo1;           /* Exposure value of the 1st reference point in high lux condition (in us) */
   uint8_t  HL_Lum1;            /* Down luminance value of the 1st reference point in high lux condition */
-  uint32_t HL_Expo2;           /* Exposure value of the 2nd reference point in high lux condition (in ms) */
+  uint32_t HL_Expo2;           /* Exposure value of the 2nd reference point in high lux condition (in us) */
   uint8_t  HL_Lum2;            /* Down luminance value of the 2nd reference point in high lux condition */
   uint32_t LL_LuxRef;          /* Low lux value reference for calibration */
-  uint32_t LL_Expo1;           /* Exposure value of the 1st reference point in low lux condition (in ms) */
+  uint32_t LL_Expo1;           /* Exposure value of the 1st reference point in low lux condition (in us) */
   uint8_t  LL_Lum1;            /* Down luminance value of the 1st reference point in low lux condition */
-  uint32_t LL_Expo2;           /* Exposure value of the 2nd reference point in low lux condition (in ms) */
+  uint32_t LL_Expo2;           /* Exposure value of the 2nd reference point in low lux condition (in us) */
   uint8_t  LL_Lum2;            /* Down luminance value of the 2nd reference point in low lux condition */
   float    calibFactor;        /* Specific sensor calibration factor based on empirical measurements */
 } ISP_LuxReferenceTypedef;
