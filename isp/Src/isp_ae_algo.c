@@ -157,7 +157,7 @@ static void isp_ae_get_gain_expo_maximized(uint32_t gain, uint32_t exposure,
   }
 }
 
-void get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposure, uint32_t *pGain, uint32_t exposure, uint32_t gain)
+void isp_ae_get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposure, uint32_t *pGain, uint32_t exposure, uint32_t gain)
 {
   double a, b, c, d;
   double cur_global_exposure = exposure * pow(10, (double)gain / 20000);
@@ -169,7 +169,7 @@ void get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposure, uint
   uint32_t curExposure, curGain;
 
   /* Handle start conditions */
-  if ((averageL <= 5) && exposure == pSensorInfo->exposure_min && gain == pSensorInfo->gain_min)
+  if (averageL <= 5 && exposure == pSensorInfo->exposure_min && gain == pSensorInfo->gain_min)
   {
     new_global_exposure = gain ? exposure * pow(10, ((double)gain + 3000) / 20000) : exposure + 2000;
     if (new_global_exposure <= pSensorInfo->exposure_max)
@@ -239,10 +239,11 @@ void get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposure, uint
         /* Wrong estimation, to be corrected */
         new_global_exposure = -1;
 
+        /* Same lux estimation but previous setting did not allow convergence, so we need to change it */
         if ((abs(lux - previous_lux) <= (float)lux * 0.05) && (lux != 0))
         {
-          /* Same lux estimation but previous setting did not allow convergence */
-          new_global_exposure = b * (((double)IQParamConfig->AECAlgo.exposureTarget - averageL) / lux + cur_global_exposure / (a * cur_global_exposure + b)) / (1 - a * (((double)IQParamConfig->AECAlgo.exposureTarget - averageL) / lux + cur_global_exposure / (a * cur_global_exposure + b)));
+          /* Use the luminance information for readjustment */
+          new_global_exposure = cur_global_exposure * ((double)IQParamConfig->AECAlgo.exposureTarget / averageL);
         }
 
         if (new_global_exposure <= 0)
@@ -265,7 +266,8 @@ void get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposure, uint
         if ((((new_global_exposure / cur_global_exposure) < 1.10) && (((double)IQParamConfig->AECAlgo.exposureTarget / averageL) > 1.40)) || /* new global exposure is very close to previous exposure while luminance is at least 40% higher */
             (((new_global_exposure / cur_global_exposure) < 1.50) && (((double)IQParamConfig->AECAlgo.exposureTarget / averageL) > 1.80)) || /* new global exposure is less than 50% higher while luminance is more than 80% higher */
             (((new_global_exposure / cur_global_exposure) > 1.65) && (((double)IQParamConfig->AECAlgo.exposureTarget / averageL) < 1.30)) || /* new global exposure is very high while luminance is less than 30% higher */
-            (((new_global_exposure / cur_global_exposure) > 1.35) && (((double)IQParamConfig->AECAlgo.exposureTarget / averageL) < 1.10)))   /* new global exposure is too high when luminance is very close to the target */
+            (((new_global_exposure / cur_global_exposure) > 1.35) && (((double)IQParamConfig->AECAlgo.exposureTarget / averageL) < 1.10)) || /* new global exposure is too high when luminance is very close to the target */
+            (new_global_exposure / cur_global_exposure) < 1.02) /* Or same exposure estimation but we are not within tolerance margin */
         {
           /* Apply the same ratio */
           new_global_exposure = cur_global_exposure * ((double)IQParamConfig->AECAlgo.exposureTarget / averageL);
@@ -280,10 +282,11 @@ void get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposure, uint
         /* Wrong estimation, to be corrected */
         new_global_exposure = -1;
 
-        if ((abs(lux - previous_lux) <= (float)lux * 0.05) && lux != 0)
+        /* Same lux estimation but previous setting did not allow convergence, so we need to change it */
+        if ((abs(lux - previous_lux) <= (float)lux * 0.05) && (lux != 0))
         {
-          /* Same lux estimation but previous setting did not allow convergence */
-          new_global_exposure = b * (((double)averageL - IQParamConfig->AECAlgo.exposureTarget) / lux + cur_global_exposure / (a * cur_global_exposure + b)) / (-1 - a * (((double)averageL - IQParamConfig->AECAlgo.exposureTarget) / lux + cur_global_exposure / (a * cur_global_exposure + b)));
+          /* Use the luminance information for readjustment */
+          new_global_exposure = cur_global_exposure * ((double)IQParamConfig->AECAlgo.exposureTarget / averageL);
         }
 
         if (new_global_exposure <= 0) //small step to get closer to target
@@ -306,7 +309,8 @@ void get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposure, uint
         if ((((new_global_exposure / cur_global_exposure) > 0.60) && (((double)IQParamConfig->AECAlgo.exposureTarget / averageL) < 0.40)) || /* new global exposure is at least 60% of the current exposure while luminance is less than 40% of the target */
             (((new_global_exposure / cur_global_exposure) < 0.45) && (((double)IQParamConfig->AECAlgo.exposureTarget / averageL) > 0.65)) || /* new global exposure is less than 45% of the current exposure while luminance is more than 65% of the target */
             (((new_global_exposure / cur_global_exposure) < 0.15) && (((double)IQParamConfig->AECAlgo.exposureTarget / averageL) > 0.50)) || /* new global exposure is very low while luminance is more than 50% of the target */
-            (((new_global_exposure / cur_global_exposure) < 0.60) && (((double)IQParamConfig->AECAlgo.exposureTarget / averageL) > 0.85)))   /* new global exposure is less than 60% of the current exposure while luminance is very close to the target */
+            (((new_global_exposure / cur_global_exposure) < 0.60) && (((double)IQParamConfig->AECAlgo.exposureTarget / averageL) > 0.85)) || /* new global exposure is less than 60% of the current exposure while luminance is very close to the target */
+            (new_global_exposure / cur_global_exposure) > 0.98) /* Or same exposure estimation but we are not within tolerance margin */
         {
           /* Apply the same ratio */
           new_global_exposure = cur_global_exposure * ((double)IQParamConfig->AECAlgo.exposureTarget / averageL);
