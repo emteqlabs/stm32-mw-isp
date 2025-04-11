@@ -70,7 +70,7 @@ void isp_ae_init(ISP_HandleTypeDef *hIsp)
   /* Set max analog gain */
   if (strcmp(hIsp->sensorInfo.name, "IMX335") == 0)
   {
-    analog_gain_max = 36000;
+    analog_gain_max = 30000;
   }
   else if (strcmp(hIsp->sensorInfo.name, "VD66GY") == 0)
   {
