@@ -18,6 +18,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "isp_services.h"
+#include <inttypes.h>
 
 /* Private types -------------------------------------------------------------*/
 /* Private constants ---------------------------------------------------------*/
@@ -115,7 +116,7 @@ ISP_StatusTypeDef ISP_AWB_GetConfig(ISP_StatisticsTypeDef *pStats, ISP_ColorConv
       (abs(pStats->averageB - ISP_AWB_CurrStats.averageB) <= ISP_AWB_STAT_NO_CHANGE))
   {
 #ifdef ALGO_AWB_DBG_LOGS
-    printf("R/B=%4ld  -  No change  -  ColorTemp = %ld\n", rb_ratio, ISP_AWB_CurrTemp);
+    printf("R/B=%4"PRIu32"  -  No change  -  ColorTemp = %"PRIu32"\r\n", rb_ratio, ISP_AWB_CurrTemp);
 #endif
     *pColorConvConfig = ISP_AWB_CurrColorConv;
     *pISPGainConfig = ISP_AWB_CurrISPGain;
@@ -154,7 +155,7 @@ ISP_StatusTypeDef ISP_AWB_GetConfig(ISP_StatisticsTypeDef *pStats, ISP_ColorConv
     {
       /* Select the 'down' profile */
 #ifdef ALGO_AWB_DBG_LOGS
-      printf("R/B=%4ld  -  Forcing down profile (ratio=%d%%)\n", rb_ratio, (int)(100 * interpolRatio));
+      printf("R/B=%4"PRIu32"  -  Forcing down profile (ratio=%"PRIu16"%%)\r\n", rb_ratio, (int)(100 * interpolRatio));
 #endif
       exactProfId = (int)downProfId;
     }
@@ -162,7 +163,7 @@ ISP_StatusTypeDef ISP_AWB_GetConfig(ISP_StatisticsTypeDef *pStats, ISP_ColorConv
     {
       /* Select the 'up' profile */
 #ifdef ALGO_AWB_DBG_LOGS
-      printf("R/B=%4ld  -  Forcing up profile (ratio=%d%%)\n", rb_ratio, (int)(100 * interpolRatio));
+      printf("R/B=%4"PRIu32"  -  Forcing up profile (ratio=%"PRIu16"%%)\r\n", rb_ratio, (int)(100 * interpolRatio));
 #endif
       exactProfId = (int)upProfId;
     }
@@ -183,7 +184,7 @@ ISP_StatusTypeDef ISP_AWB_GetConfig(ISP_StatisticsTypeDef *pStats, ISP_ColorConv
 
     *pColorTemp = ISP_AWB_Config.referenceColorTemp[exactProfId];
 #ifdef ALGO_AWB_DBG_LOGS
-    printf("R/B=%4ld  -  Profile exact:%d  -  ColorTemp = %ld\n", rb_ratio, exactProfId, *pColorTemp);
+    printf("R/B=%4"PRIu32"  -  Profile exact:%"PRIu16"  -  ColorTemp = %"PRIu32"\r\n", rb_ratio, exactProfId, *pColorTemp);
 #endif
   }
   else

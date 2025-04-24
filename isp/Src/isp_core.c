@@ -727,8 +727,8 @@ void ISP_OutputMeta(ISP_HandleTypeDef *hIsp)
 {
   if (Meta.outputEnable)
   {
-    printf("Meta[%"PRIu32"]: L = %"PRIu16", TG = %"PRIu32", G = %"PRIu32", E = %"PRIu32", CT = %"PRIu32"\r\n",
-           hIsp->MainPipe_FrameCount, Meta.averageL, Meta.exposureTarget, Meta.gain, Meta.exposure, Meta.colorTemp);
+    printf("Meta[%"PRIu32"]: L = %"PRIu16", TG = %"PRIu32", G = %"PRIu32", E = %"PRIu32", CT = %"PRIu32", LUX = %"PRIu32"\r\n",
+           hIsp->MainPipe_FrameCount, Meta.averageL, Meta.exposureTarget, Meta.gain, Meta.exposure, Meta.colorTemp, Meta.lux);
   }
 }
 
