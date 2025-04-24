@@ -25,6 +25,7 @@
 #include "evision-api-utils.h"
 #include <limits.h>
 #include <math.h>
+#include <inttypes.h>
 
 /* Private types -------------------------------------------------------------*/
 /* ISP algorithms identifier */
@@ -447,7 +448,7 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
 #ifdef ALGO_AEC_DBG_LOGS
     if (avgL != currentL)
     {
-      printf("L = %ld\r\n", avgL);
+      printf("L = %"PRIu32"\r\n", avgL);
       currentL = avgL;
     }
 #endif
@@ -484,7 +485,7 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
         }
 
 #ifdef ALGO_AEC_DBG_LOGS
-        printf("New gain = %ld\r\n", gainConfig.gain);
+        printf("New gain = %"PRIu32"\r\n", gainConfig.gain);
 #endif
       }
 
@@ -500,7 +501,7 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
         }
 
 #ifdef ALGO_AEC_DBG_LOGS
-        printf("New exposure = %ld\r\n", exposureConfig.exposure);
+        printf("New exposure = %"PRIu32"\r\n", exposureConfig.exposure);
 #endif
       }
     }
@@ -869,7 +870,7 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
           {
             printf("Last 100 measures:\r\n");
             for (int i = 0; i < ISP_AWB_COLORTEMP_REF; i++) {
-              printf("\t%ld: %d\r\n",
+              printf("\t%"PRIu32": %"PRIu16"\r\n",
                      IQParamConfig->AWBAlgo.referenceColorTemp[i],
                      nb_colortemp_change[i]);
             }
@@ -885,7 +886,7 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
           if (pIspAWBestimator->out_temp != currentColorTemp || reconfigureRequest == true)
           {
 #ifdef ALGO_AWB_DBG_LOGS
-            printf("Color temperature = %ld\r\n", (uint32_t) pIspAWBestimator->out_temp);
+            printf("Color temperature = %"PRIu32"\r\n", (uint32_t) pIspAWBestimator->out_temp);
 #endif
             if (pIspAWBestimator->out_temp == colorTempHistory[1])
             {
@@ -1329,7 +1330,7 @@ ISP_StatusTypeDef ISP_Algo_Process(ISP_HandleTypeDef *hIsp)
         }
         else
         {
-          printf(" %ld ms\r\n", meas);
+          printf(" %"PRIu32" ms\r\n", meas);
         }
         algo->iter = 0;
       }
