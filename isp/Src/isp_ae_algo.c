@@ -55,7 +55,6 @@
 /* Private variables ---------------------------------------------------------*/
 static ISP_IQParamTypeDef *IQParamConfig;
 static ISP_SensorInfoTypeDef *pSensorInfo;
-static uint32_t analog_gain_max;
 static uint32_t previous_lux = 0;
 
 /* Global variables ----------------------------------------------------------*/
@@ -65,25 +64,6 @@ void isp_ae_init(ISP_HandleTypeDef *hIsp)
 {
   IQParamConfig = ISP_SVC_IQParam_Get(hIsp);
   pSensorInfo = &hIsp->sensorInfo;
-
-  /* TODO: change sensor info to get max analog gain from sensor driver */
-  /* Set max analog gain */
-  if (strcmp(hIsp->sensorInfo.name, "IMX335") == 0)
-  {
-    analog_gain_max = 30000;
-  }
-  else if (strcmp(hIsp->sensorInfo.name, "VD66GY") == 0)
-  {
-    analog_gain_max = 18000;
-  }
-  else if (strcmp(hIsp->sensorInfo.name, "VD5941") == 0)
-  {
-    analog_gain_max = 12000;
-  }
-  else
-  {
-    analog_gain_max = 0;
-  }
 }
 
 static void isp_ae__get_gain_expo_multiple(uint32_t gain, uint32_t exposure,
@@ -181,7 +161,7 @@ void isp_ae_get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposur
     {
       *pExposure = pSensorInfo->exposure_max;
       *pGain = (uint32_t)(20 * 1000 * log10((float)new_global_exposure / (float)(*pExposure)));
-      *pGain = (*pGain < pSensorInfo->gain_min) ? pSensorInfo->gain_min : (*pGain > analog_gain_max) ? analog_gain_max : *pGain;
+      *pGain = (*pGain < pSensorInfo->gain_min) ? pSensorInfo->gain_min : (*pGain > pSensorInfo->again_max) ? pSensorInfo->again_max : *pGain;
     }
     return;
   }
@@ -219,7 +199,7 @@ void isp_ae_get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposur
     if (lux <= custom_low_lux_limit)
     {
       /* Calculate coefficient for very low lux model as we reach the limit of the previous one */
-      d = pSensorInfo->exposure_max * pow(10, (double)analog_gain_max / 20000);
+      d = pSensorInfo->exposure_max * pow(10, (double)pSensorInfo->again_max / 20000);
       c = ((b / (((double)custom_low_lux_limit / (IQParamConfig->AECAlgo.exposureTarget * IQParamConfig->luxRef.calibFactor)) - (double)a)) - d) / custom_low_lux_limit;
 
       new_global_exposure = (c * (double)lux) + d;
@@ -330,7 +310,7 @@ void isp_ae_get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposur
       *pGain = (uint32_t)(20 * 1000 * log10(new_global_exposure / (float)(*pExposure)));
 
       /* Limit digital gain (lux value is very low and the gain is already very high and we need to avoid oscillations) */
-      if ((*pGain > analog_gain_max) && (abs(*pGain - curGain) > AE_MAX_GAIN_INCREMENT))
+      if ((*pGain > pSensorInfo->again_max) && (abs(*pGain - curGain) > AE_MAX_GAIN_INCREMENT))
       {
         *pGain = *pGain < curGain ? (curGain < AE_MAX_GAIN_INCREMENT ? 0 : curGain - AE_MAX_GAIN_INCREMENT) : curGain + AE_MAX_GAIN_INCREMENT;
       }
