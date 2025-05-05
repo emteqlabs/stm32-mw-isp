@@ -2137,7 +2137,7 @@ int32_t ISP_SVC_Misc_GetEstimatedLux(ISP_HandleTypeDef *hIsp)
     return 0;
   }
 
-  lux = IQParamConfig->luxRef.calibFactor * (a * globalExposure + b) * stats.down.averageL / globalExposure;
+  lux = (double)IQParamConfig->luxRef.calibFactor * (a * globalExposure + b) * stats.down.averageL / globalExposure;
 
   if (lux <= IQParamConfig->luxRef.LL_LuxRef * 0.9)
   {
@@ -2150,7 +2150,7 @@ int32_t ISP_SVC_Misc_GetEstimatedLux(ISP_HandleTypeDef *hIsp)
     b = (IQParamConfig->luxRef.LL_LuxRef  * (double)IQParamConfig->luxRef.LL_Expo1 / IQParamConfig->luxRef.LL_Lum1) -
         (a * IQParamConfig->luxRef.LL_Expo1);
 
-    lux = IQParamConfig->luxRef.calibFactor * (a * globalExposure + b) * stats.down.averageL / globalExposure;
+    lux = (double)IQParamConfig->luxRef.calibFactor * (a * globalExposure + b) * stats.down.averageL / globalExposure;
   }
 
   Meta.lux = (lux < 0) ? 0 : lux;
