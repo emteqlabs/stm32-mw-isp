@@ -159,6 +159,7 @@ typedef struct
   uint32_t height;
   uint32_t gain_min;
   uint32_t gain_max;
+  uint32_t again_max;
   uint32_t exposure_min;
   uint32_t exposure_max;
 } ISP_SensorInfoTypeDef;
