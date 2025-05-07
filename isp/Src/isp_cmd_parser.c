@@ -234,10 +234,24 @@ typedef struct
   ISP_GammaTypeDef data;
 } ISP_CMD_GammaTypeDef;
 
+/* Keep sensor info backward compatibility */
+typedef struct
+{
+  char name[ISP_SENSOR_INFO_MAX_LENGTH];
+  uint8_t bayer_pattern;
+  uint8_t color_depth;
+  uint32_t width;
+  uint32_t height;
+  uint32_t gain_min;
+  uint32_t gain_max;
+  uint32_t exposure_min;
+  uint32_t exposure_max;
+} ISP_SensorInfoTypeDef2;
+
 typedef struct
 {
   ISP_CMD_HeaderTypeDef header;
-  ISP_SensorInfoTypeDef data;
+  ISP_SensorInfoTypeDef2 data;
 } ISP_CMD_SensorInfoTypeDef;
 
 typedef struct
@@ -773,7 +787,15 @@ static ISP_StatusTypeDef ISP_CmdParser_GetConfig(ISP_HandleTypeDef *hIsp, uint8_
     break;
 
   case ISP_CMD_SENSORINFO:
-    c.sensorInfo.data = hIsp->sensorInfo;
+    strcpy(c.sensorInfo.data.name, hIsp->sensorInfo.name);
+    c.sensorInfo.data.bayer_pattern = hIsp->sensorInfo.bayer_pattern;
+    c.sensorInfo.data.color_depth = hIsp->sensorInfo.color_depth;
+    c.sensorInfo.data.width = hIsp->sensorInfo.width;
+    c.sensorInfo.data.height = hIsp->sensorInfo.height;
+    c.sensorInfo.data.gain_min = hIsp->sensorInfo.gain_min;
+    c.sensorInfo.data.gain_max = hIsp->sensorInfo.gain_max;
+    c.sensorInfo.data.exposure_min = hIsp->sensorInfo.exposure_min;
+    c.sensorInfo.data.exposure_max = hIsp->sensorInfo.exposure_max;
     break;
 
   case ISP_CMD_SENSORDELAY:
