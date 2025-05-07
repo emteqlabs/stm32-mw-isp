@@ -2139,9 +2139,9 @@ int32_t ISP_SVC_Misc_GetEstimatedLux(ISP_HandleTypeDef *hIsp)
 
   lux = (double)IQParamConfig->luxRef.calibFactor * (a * globalExposure + b) * stats.down.averageL / globalExposure;
 
-  if (lux <= IQParamConfig->luxRef.LL_LuxRef * 0.9)
+  if (lux <= IQParamConfig->luxRef.HL_LuxRef * 0.9)
   {
-	/* Calculate a and b with the low lux references to improve precision when lux is under 90% of the LL_LuxRef */
+	/* Calculate a and b with the low lux references to improve precision when lux is under 90% of the HL_LuxRef */
     a = (IQParamConfig->luxRef.LL_LuxRef *
          ((double)IQParamConfig->luxRef.LL_Expo1 / IQParamConfig->luxRef.LL_Lum1 -
           (double)IQParamConfig->luxRef.LL_Expo2 / IQParamConfig->luxRef.LL_Lum2)) /
