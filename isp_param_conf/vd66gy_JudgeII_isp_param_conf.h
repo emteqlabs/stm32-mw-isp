@@ -73,7 +73,7 @@ static const ISP_IQParamTypeDef ISP_IQParamCacheInit_VD66GY = {
     },
     .AWBAlgo = {
         .enable = 1,
-        .id = { "JudgeII A", "JudegII TL84", "JudegeII DAY", "", "", },
+        .id = { "JudgeII-A", "JudgeII-TL84", "JudgeII-DAY", "", "", },
         .referenceColorTemp = { 2750, 4150, 6750, 0, 0, },
         .ispGainR = { 95000000, 117000000, 156000000, 0, 0, },
         .ispGainG = { 100000000, 100000000, 100000000, 0, 0, },
@@ -106,6 +106,9 @@ static const ISP_IQParamTypeDef ISP_IQParamCacheInit_VD66GY = {
     },
     .gamma = {
         .enable = 1,
+    },
+    .sensorDelay = {
+        .delay = 4,
     },
 };
 
