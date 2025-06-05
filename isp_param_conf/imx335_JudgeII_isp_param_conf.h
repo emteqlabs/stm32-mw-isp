@@ -117,6 +117,19 @@ static const ISP_IQParamTypeDef ISP_IQParamCacheInit_IMX335 = {
     .sensorDelay = {
         .delay = 3,
     },
+    .luxRef = {
+        .HL_LuxRef = 1050,
+        .HL_Expo1 = 5000,
+        .HL_Lum1 = 20,
+        .HL_Expo2 = 33266,
+        .HL_Lum2 = 117,
+        .LL_LuxRef = 270,
+        .LL_Expo1 = 9000,
+        .LL_Lum1 = 10,
+        .LL_Expo2 = 33266,
+        .LL_Lum2 = 36,
+        .calibFactor = 0.905,
+    },
 };
 
 static const ISP_IQParamTypeDef* ISP_IQParamCacheInit[] = {
