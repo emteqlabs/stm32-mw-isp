@@ -810,7 +810,7 @@ static ISP_StatusTypeDef ISP_CmdParser_GetConfig(ISP_HandleTypeDef *hIsp, uint8_
 
   if (!((cmd_id == ISP_CMD_STATISTICUP || cmd_id == ISP_CMD_STATISTICDOWN || cmd_id == ISP_CMD_SENSORDELAYMEASURE) && (ret == ISP_OK)))
   {
-    /* Send command answer (except for statistic and SensorDelayMeasuer where the answer is sent upon callback call */
+    /* Send command answer (except for statistic and SensorDelayMeasure where the answer is sent upon callback call */
     ISP_ToolCom_SendData((uint8_t*)&c, sizeof(c), NULL, NULL);
   }
 
