@@ -466,11 +466,11 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
     }
 
     /* Store meta data */
-    Meta.averageL = avgL;
+    Meta.averageL = (uint8_t)avgL;
     Meta.exposureTarget = IQParamConfig->AECAlgo.exposureTarget;
 
     /* Run algo to calculate new gain and exposure */
-    e_ret = evision_api_st_ae_process(pIspAEprocess, gainConfig.gain, exposureConfig.exposure, avgL);
+    e_ret = evision_api_st_ae_process(pIspAEprocess, gainConfig.gain, exposureConfig.exposure, (uint8_t)avgL);
     if (e_ret == EVISION_RET_SUCCESS)
     {
       if (gainConfig.gain != pIspAEprocess->new_gain)
@@ -513,6 +513,13 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
     /* Wait for stats to be ready */
     algo->state = ISP_ALGO_STATE_WAITING_STAT;
     break;
+
+  default:
+    printf("WARNING: Unknown AE algo state\r\n");
+    /* Reset state to ISP_ALGO_STATE_INIT */
+    algo->state = ISP_ALGO_STATE_INIT;
+    break;
+
   }
 
   return ret;
@@ -562,9 +569,9 @@ void ISP_Algo_GetUpStat(ISP_HandleTypeDef *hIsp, ISP_SVC_StatStateTypeDef *pStat
     upG = (int64_t) pStats->down.averageG * ISP_GAIN_PRECISION_FACTOR / ISPGain.ispGainG;
     upB = (int64_t) pStats->down.averageB * ISP_GAIN_PRECISION_FACTOR / ISPGain.ispGainB;
 
-    pStats->up.averageR = (uint32_t) upR;
-    pStats->up.averageG = (uint32_t) upG;
-    pStats->up.averageB = (uint32_t) upB;
+    pStats->up.averageR = (uint8_t) upR;
+    pStats->up.averageG = (uint8_t) upG;
+    pStats->up.averageB = (uint8_t) upB;
 
     if ((ISP_SVC_ISP_GetBlackLevel(hIsp, &BlackLevel) == ISP_OK) && (BlackLevel.enable == 1))
     {
@@ -781,7 +788,7 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
 
     /* Register profiles */
     e_ret = evision_api_awb_init_profiles(pIspAWBestimator, (double) IQParamConfig->AWBAlgo.referenceColorTemp[0],
-                                          (double) IQParamConfig->AWBAlgo.referenceColorTemp[profNb - 1], profNb,
+                                          (double) IQParamConfig->AWBAlgo.referenceColorTemp[profNb - 1], (uint16_t)profNb,
                                           colorTempThresholds, awbProfiles);
     if (e_ret != EVISION_RET_SUCCESS)
     {
@@ -827,7 +834,9 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
 
     for (i = 0; i < 3; i++)
     {
-      if ((abs(stats.up.averageR - statsHistory[i][0]) > 2) || (abs(stats.up.averageG - statsHistory[i][1]) > 2) || (abs(stats.up.averageB - statsHistory[i][2]) > 2))
+      if ((abs(stats.up.averageR - (int32_t)statsHistory[i][0]) > 2)
+          || (abs(stats.up.averageG - (int32_t)statsHistory[i][1]) > 2)
+          || (abs(stats.up.averageB - (int32_t)statsHistory[i][2]) > 2))
       {
         stat_has_changed = true;
       }
@@ -966,6 +975,12 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
     /* Wait for stats to be ready */
     algo->state = ISP_ALGO_STATE_WAITING_STAT;
     break;
+
+  default:
+    printf("WARNING: Unknown AWB algo state\r\n");
+    /* Reset state to ISP_ALGO_STATE_INIT */
+    algo->state = ISP_ALGO_STATE_INIT;
+    break;
   }
 
   return ret;
@@ -1034,7 +1049,8 @@ ISP_StatusTypeDef ISP_Algo_SensorDelay_Process(void *hIsp, void *pAlgo)
   ISP_IQParamTypeDef *IQParamConfig;
   ISP_StatusTypeDef ret = ISP_OK;
   uint8_t sensorDelay;
-  int32_t avgL, i;
+  int32_t avgL;
+  uint32_t i;
   static int32_t refL, delay, delays[ALGO_DELAY_NB_CONFIG - 1], configId;
   static ISP_SensorExposureTypeDef configExposure[ALGO_DELAY_NB_CONFIG];
   static ISP_SensorGainTypeDef configGain[ALGO_DELAY_NB_CONFIG];
@@ -1177,7 +1193,7 @@ ISP_StatusTypeDef ISP_Algo_SensorDelay_Process(void *hIsp, void *pAlgo)
       {
         if ((delays[i] != ALGO_DELAY_MAX) && (delays[i] > sensorDelay))
         {
-          sensorDelay = delays[i];
+          sensorDelay = (uint8_t)delays[i];
         }
       }
 
@@ -1207,6 +1223,12 @@ ISP_StatusTypeDef ISP_Algo_SensorDelay_Process(void *hIsp, void *pAlgo)
 
       algo->state = ISP_ALGO_STATE_INIT;
     }
+    break;
+
+  default:
+    printf("WARNING: Unknown Sensor Delay algo state\r\n");
+    /* Reset state to ISP_ALGO_STATE_INIT */
+    algo->state = ISP_ALGO_STATE_INIT;
     break;
   }
 

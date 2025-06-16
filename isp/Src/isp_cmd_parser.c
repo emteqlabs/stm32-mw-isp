@@ -352,6 +352,7 @@ ISP_StatusTypeDef ISP_CmdParser_ProcessCommand(ISP_HandleTypeDef *hIsp, uint8_t 
   */
 ISP_StatusTypeDef ISP_CmdParser_SendSensorDelayMeasure(ISP_HandleTypeDef *hIsp, ISP_SensorDelayTypeDef *pSensorDelay)
 {
+  UNUSED(hIsp);
   ISP_CMD_TypeDef cmd = { 0 };
 
   /* Send the answer command */
@@ -880,6 +881,7 @@ static void ISP_CmdParser_SendDumpData(uint8_t* pFrame, uint32_t size)
   */
 static ISP_StatusTypeDef ISP_CmdParser_StatUpCb(ISP_AlgoTypeDef *pAlgo)
 {
+  UNUSED(pAlgo);
   ISP_CMD_TypeDef cmd = { 0 };
 
   /* Send the answer command */
@@ -900,6 +902,7 @@ static ISP_StatusTypeDef ISP_CmdParser_StatUpCb(ISP_AlgoTypeDef *pAlgo)
   */
 static ISP_StatusTypeDef ISP_CmdParser_StatDownCb(ISP_AlgoTypeDef *pAlgo)
 {
+  UNUSED(pAlgo);
   ISP_CMD_TypeDef cmd = { 0 };
 
   /* Send the answer command */
