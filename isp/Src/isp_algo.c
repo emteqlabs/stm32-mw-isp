@@ -44,7 +44,7 @@ typedef enum
 /* Additional delay to let things getting stable after an AWB update */
 #define ALGO_AWB_ADDITIONAL_LATENCY                  3
 #define ALGO_AWB_STAT_CHECK_SKIP_AFTER_INIT          10
-#define ALGO_AWB_STAT_CHECK_SKIP_AFTER_CT_ESTIMATION 4
+#define ALGO_AWB_STAT_CHECK_SKIP_AFTER_CT_ESTIMATION 6
 
 /* Debug logs control */
 //#define ALGO_AWB_DBG_LOGS
@@ -747,8 +747,15 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
   switch(algo->state)
   {
   case ISP_ALGO_STATE_INIT:
-    /* Set profiles (color temperature, gains, color conv matrix) */
     profNb = 0;
+
+    /* Reset color temperature history */
+    for (i = 0; i < 2; i++)
+    {
+      colorTempHistory[i] = 0;
+    }
+
+    /* Set profiles (color temperature, gains, color conv matrix) */
     for (profId = 0; profId < ISP_AWB_COLORTEMP_REF; profId++)
     {
       colorTemp = IQParamConfig->AWBAlgo.referenceColorTemp[profId];
@@ -897,7 +904,7 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
 #ifdef ALGO_AWB_DBG_LOGS
             printf("Color temperature = %"PRIu32"\r\n", (uint32_t) pIspAWBestimator->out_temp);
 #endif
-            if (pIspAWBestimator->out_temp == colorTempHistory[1])
+            if ((pIspAWBestimator->out_temp == colorTempHistory[1]) && (reconfigureRequest != true))
             {
               skip_stat_check_count = 0; //oscillation detected
             }
