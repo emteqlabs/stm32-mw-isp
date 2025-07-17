@@ -583,6 +583,31 @@ ISP_StatusTypeDef ISP_GetStatArea(ISP_HandleTypeDef *hIsp, ISP_StatAreaTypeDef *
 }
 
 /**
+  * @brief  ISP_EnableRestartState
+  *         Enable the Restart State mode. When enabled, when the system restarts the ISP middleware,
+  *         its configuration is set just as it was at its latest update.
+  * @param  hIsp: ISP device handle
+  * @param  pRestartState: Pointer to the Restart State. To use this mode in a Low Power use case, where
+  *         the ISP state is applied at system wake up, this pointer must be in some retention memory.
+  * @retval Operation status
+  */
+ISP_StatusTypeDef ISP_EnableRestartState(ISP_HandleTypeDef *hIsp, ISP_RestartStateTypeDef *pRestartState)
+{
+  return ISP_SVC_SetRestartState(hIsp, pRestartState);
+}
+
+/**
+  * @brief  ISP_DisableRestartState
+  *         Disable the Restart State mode.
+  * @param  hIsp: ISP device handle
+  * @retval Operation status
+  */
+ISP_StatusTypeDef ISP_DisableRestartState(ISP_HandleTypeDef *hIsp)
+{
+  return ISP_SVC_SetRestartState(hIsp, NULL);
+}
+
+/**
   * @brief  ISP_GatherStatistics
   *         Gather statistics
   * @param  hIsp: ISP device handle

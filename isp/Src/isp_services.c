@@ -86,6 +86,7 @@ static ISP_DecimationTypeDef ISP_DecimationValue = {ISP_DECIM_FACTOR_1};
 static ISP_IQParamTypeDef ISP_IQParamCache;
 static ISP_SVC_StatEngineTypeDef ISP_SVC_StatEngine;
 static bool ISP_SensorDelayMeasureRun;
+static ISP_RestartStateTypeDef *pISP_RestartState;
 
 static const uint32_t avgRGBUp[] = {
     DCMIPP_STAT_EXT_SOURCE_PRE_BLKLVL_R, DCMIPP_STAT_EXT_SOURCE_PRE_BLKLVL_G, DCMIPP_STAT_EXT_SOURCE_PRE_BLKLVL_B
@@ -1657,6 +1658,34 @@ ISP_IQParamTypeDef *ISP_SVC_IQParam_Get(ISP_HandleTypeDef *hIsp)
   (void)hIsp; /* unused */
 
   return &ISP_IQParamCache;
+}
+
+/**
+  * @brief  ISP_SVC_GetRestartState
+  *         Get the pointer to the ISP Restart State
+  * @param  hIsp: ISP device handle
+  * @retval Pointer to the ISP Restart State
+  */
+ISP_RestartStateTypeDef *ISP_SVC_GetRestartState(ISP_HandleTypeDef *hIsp)
+{
+  (void)hIsp; /* unused */
+
+  return pISP_RestartState;
+}
+
+/**
+  * @brief  ISP_SVC_SetRestartState
+  *         Set the pointer to the ISP Restart State
+  * @param  hIsp: ISP device handle
+  * @param  pRestartState: Pointer to the ISP Restart State
+  * @retval ISP status
+  */
+ISP_StatusTypeDef ISP_SVC_SetRestartState(ISP_HandleTypeDef *hIsp, ISP_RestartStateTypeDef *pRestartState)
+{
+  (void)hIsp; /* unused */
+
+  pISP_RestartState = pRestartState;
+  return ISP_OK;
 }
 
 /**

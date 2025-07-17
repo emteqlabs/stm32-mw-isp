@@ -47,6 +47,8 @@ ISP_StatusTypeDef ISP_GetDecimationFactor(ISP_HandleTypeDef *hIsp, ISP_Decimatio
 ISP_StatusTypeDef ISP_SetStatArea(ISP_HandleTypeDef *hIsp, ISP_StatAreaTypeDef *pStatArea);
 ISP_StatusTypeDef ISP_GetStatArea(ISP_HandleTypeDef *hIsp, ISP_StatAreaTypeDef *pStatArea);
 ISP_StatusTypeDef ISP_GetLuxEstimation(ISP_HandleTypeDef *hIsp, uint32_t *pLux);
+ISP_StatusTypeDef ISP_EnableRestartState(ISP_HandleTypeDef *hIsp, ISP_RestartStateTypeDef *pRestartState);
+ISP_StatusTypeDef ISP_DisableRestartState(ISP_HandleTypeDef *hIsp);
 
 void ISP_GatherStatistics(ISP_HandleTypeDef *hIsp);
 void ISP_IncMainFrameId(ISP_HandleTypeDef *hIsp);

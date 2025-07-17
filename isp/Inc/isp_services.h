@@ -111,6 +111,10 @@ ISP_StatusTypeDef ISP_SVC_Dump_GetFrame(ISP_HandleTypeDef *hIsp, uint32_t **pBuf
 ISP_StatusTypeDef ISP_SVC_IQParam_Init(ISP_HandleTypeDef *hIsp, const ISP_IQParamTypeDef *ISP_IQParamCacheInit);
 ISP_IQParamTypeDef *ISP_SVC_IQParam_Get(ISP_HandleTypeDef *hIsp);
 
+/* Restart state services */
+ISP_RestartStateTypeDef *ISP_SVC_GetRestartState(ISP_HandleTypeDef *hIsp);
+ISP_StatusTypeDef ISP_SVC_SetRestartState(ISP_HandleTypeDef *hIsp, ISP_RestartStateTypeDef *pRestartState);
+
 /* Statistics services */
 void ISP_SVC_Stats_Init(ISP_HandleTypeDef *hIsp);
 ISP_StatusTypeDef ISP_SVC_Stats_GetLatest(ISP_HandleTypeDef *hIsp, ISP_SVC_StatStateTypeDef *pStats);

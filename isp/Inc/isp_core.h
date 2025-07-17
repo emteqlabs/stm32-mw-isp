@@ -457,6 +457,17 @@ typedef struct
   ISP_LuxReferenceTypedef luxRef;
 } ISP_IQParamTypeDef;
 
+/* Restart state */
+typedef struct
+{
+  uint8_t sensorConfigured;
+  uint32_t sensorGain;
+  uint32_t sensorExposure;
+  uint8_t awbConfigured;
+  ISP_ColorConvTypeDef colorConv;
+  ISP_ISPGainTypeDef ISPGain;
+} ISP_RestartStateTypeDef;
+
 /* Exported constants --------------------------------------------------------*/
 #define ISP_DEMOS_STRENGTH_MAX              (7U)
 #define ISP_STATREMOVAL_HEADLINES_MAX       (7U)

@@ -258,8 +258,10 @@ ISP_StatusTypeDef ISP_Algo_AEC_Init(void *hIsp, void *pAlgo)
   ISP_SensorExposureTypeDef exposureConfig;
   ISP_SensorGainTypeDef gainConfig;
   ISP_IQParamTypeDef *IQParamConfig;
+  ISP_RestartStateTypeDef *pRestartState;
 
   IQParamConfig = ISP_SVC_IQParam_Get(hIsp);
+  pRestartState = ISP_SVC_GetRestartState(hIsp);
 
   if (IQParamConfig->sensorDelay.delay == 0)
   {
@@ -269,11 +271,22 @@ ISP_StatusTypeDef ISP_Algo_AEC_Init(void *hIsp, void *pAlgo)
 
   isp_ae_init(pIsp_handle);
 
-  /* Initialize exposure and gain at min value */
+  /* Initialize exposure and gain values */
   if (IQParamConfig->AECAlgo.enable == true)
   {
-    exposureConfig.exposure = pIsp_handle->sensorInfo.exposure_min;
-    gainConfig.gain = pIsp_handle->sensorInfo.gain_min;
+    if (pRestartState && pRestartState->sensorConfigured)
+    {
+      /* Resume from the latest applied config */
+      exposureConfig.exposure = pRestartState->sensorExposure;
+      gainConfig.gain = pRestartState->sensorGain;
+    }
+    else
+    {
+      /* Start from black frame */
+      exposureConfig.exposure = pIsp_handle->sensorInfo.exposure_min;
+      gainConfig.gain = pIsp_handle->sensorInfo.gain_min;
+    }
+
     if ((ISP_SVC_Sensor_SetExposure(hIsp, &exposureConfig) != ISP_OK) || (ISP_SVC_Sensor_SetGain(hIsp, &gainConfig)!= ISP_OK))
     {
       return ISP_ERR_ALGO;
@@ -328,6 +341,7 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
   static ISP_SVC_StatStateTypeDef stats;
   ISP_AlgoTypeDef *algo = (ISP_AlgoTypeDef *)pAlgo;
   ISP_IQParamTypeDef *IQParamConfig;
+  ISP_RestartStateTypeDef *pRestartState;
   ISP_StatusTypeDef ret = ISP_OK;
   ISP_SensorGainTypeDef gainConfig;
   ISP_SensorExposureTypeDef exposureConfig;
@@ -399,7 +413,7 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
         /* Set new gain */
         gainConfig.gain = newGain;
 
-       ret = ISP_SVC_Sensor_SetGain(hIsp, &gainConfig);
+        ret = ISP_SVC_Sensor_SetGain(hIsp, &gainConfig);
         if (ret != ISP_OK)
         {
           return ret;
@@ -424,6 +438,15 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
 #ifdef ALGO_AEC_DBG_LOGS
         printf("New exposure = %"PRIu32"\r\n", exposureConfig.exposure);
 #endif
+      }
+
+      /* Update the restart state config */
+      pRestartState = ISP_SVC_GetRestartState(hIsp);
+      if (pRestartState)
+      {
+        pRestartState->sensorGain = newGain;
+        pRestartState->sensorExposure = newExposure;
+        pRestartState->sensorConfigured = 1;
       }
     }
     else
@@ -531,6 +554,15 @@ ISP_StatusTypeDef ISP_Algo_AWB_Init(void *hIsp, void *pAlgo)
 {
   (void)hIsp; /* unused */
   ISP_AlgoTypeDef *algo = (ISP_AlgoTypeDef *)pAlgo;
+  ISP_RestartStateTypeDef *pRestartState;
+
+  pRestartState = ISP_SVC_GetRestartState(hIsp);
+  if (pRestartState && pRestartState->awbConfigured)
+  {
+    /* Resume from the latest applied config */
+    ISP_SVC_ISP_SetColorConv(hIsp, &pRestartState->colorConv);
+    ISP_SVC_ISP_SetGain(hIsp, &pRestartState->ISPGain);
+  }
 
   /* Continue the initialization in ISP_Algo_AWB_Process() function when state is ISP_ALGO_STATE_INIT.
    * This allows to read the IQ params after an algo stop/start cycle */
@@ -586,6 +618,7 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
   static uint8_t reconfigureRequest = false;
   static uint32_t currentColorTemp = 0;
   ISP_IQParamTypeDef *IQParamConfig;
+  ISP_RestartStateTypeDef *pRestartState;
   ISP_ColorConvTypeDef ColorConvConfig;
   ISP_ISPGainTypeDef ISPGainConfig;
   ISP_AlgoTypeDef *algo = (ISP_AlgoTypeDef *)pAlgo;
@@ -664,6 +697,15 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
           {
             Meta.colorTemp = estimatedColorTemp;
             currentColorTemp = estimatedColorTemp ;
+
+            /* Update the restart state */
+            pRestartState = ISP_SVC_GetRestartState(hIsp);
+            if (pRestartState)
+            {
+              pRestartState->awbConfigured = 1;
+              pRestartState->colorConv = ColorConvConfig;
+              pRestartState->ISPGain = ISPGainConfig;
+            }
           }
         }
       }
