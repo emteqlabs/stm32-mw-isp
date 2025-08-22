@@ -102,7 +102,7 @@ ISP_StatusTypeDef ISP_AWB_Init(ISP_AWBAlgoTypeDef *pAWBAlgo)
 ISP_StatusTypeDef ISP_AWB_GetConfig(ISP_StatisticsTypeDef *pStats, ISP_ColorConvTypeDef *pColorConvConfig, ISP_ISPGainTypeDef *pISPGainConfig, uint32_t *pColorTemp)
 {
   int profId, exactProfId, upProfId = 0, downProfId = 0;
-  double interpolRatio;
+  double interpolRatio = 0.0;
   uint32_t rb_ratio;
   int64_t i64;
   int i, j;
