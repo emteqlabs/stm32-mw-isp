@@ -35,7 +35,9 @@
 /* Private variables ---------------------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 /* Global variables ----------------------------------------------------------*/
-  extern ISP_MetaTypeDef Meta;
+ISP_StatusTypeDef ISP_Status = ISP_OK;
+
+extern ISP_MetaTypeDef Meta;
 /* Exported functions --------------------------------------------------------*/
 /**
   * @brief  ISP_Init
@@ -311,13 +313,8 @@ ISP_StatusTypeDef ISP_Start(ISP_HandleTypeDef *hIsp)
   return ISP_OK;
 }
 
-/**
-  * @brief  ISP_BackgroundProcess
-  *         Run the background process of the ISP device
-  * @param  hIsp: ISP device handle
-  * @retval ISP status
-  */
-ISP_StatusTypeDef ISP_BackgroundProcess(ISP_HandleTypeDef *hIsp)
+/* Wrapped by ISP_BackgroundProcess() */
+static ISP_StatusTypeDef _ISP_BackgroundProcess(ISP_HandleTypeDef *hIsp)
 {
   ISP_StatusTypeDef retAlgo, retStats;
 #ifdef ISP_MW_TUNING_TOOL_SUPPORT
@@ -359,6 +356,30 @@ ISP_StatusTypeDef ISP_BackgroundProcess(ISP_HandleTypeDef *hIsp)
   }
 
   return ISP_OK;
+}
+
+/**
+  * @brief  ISP_BackgroundProcess
+  *         Run the background process of the ISP device
+  * @param  hIsp: ISP device handle
+  * @retval ISP status
+  */
+ISP_StatusTypeDef ISP_BackgroundProcess(ISP_HandleTypeDef *hIsp)
+{
+  ISP_Status = _ISP_BackgroundProcess(hIsp);
+  return ISP_Status;
+}
+
+/**
+  * @brief  ISP_GetStatus
+  *         Get the overal ISP status (as returned by ISP_BackgroundProcess)
+  * @param  hIsp: ISP device handle
+  * @retval ISP status
+  */
+ISP_StatusTypeDef ISP_GetStatus(ISP_HandleTypeDef *hIsp)
+{
+  (void)hIsp; /* unused */
+  return ISP_Status;
 }
 
 /**

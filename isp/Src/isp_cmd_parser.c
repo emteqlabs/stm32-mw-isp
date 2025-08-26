@@ -340,6 +340,25 @@ ISP_StatusTypeDef ISP_CmdParser_ProcessCommand(ISP_HandleTypeDef *hIsp, uint8_t 
 {
   ISP_StatusTypeDef ret = ISP_OK;
   ISP_CMD_TypeDef *c = (ISP_CMD_TypeDef *)cmd;
+  ISP_CMD_TypeDef c_err = { 0 };
+  ISP_StatusTypeDef isp_status;
+
+  isp_status = ISP_GetStatus(hIsp);
+  if ((isp_status != ISP_OK) && (c->base.header.id != ISP_CMD_FIRMWARECONFIG))
+  {
+    /* For any command except FirmwareConfig return an error if the ISP overall status is 'error' */
+    c_err.base.header.operation = c->base.header.operation == ISP_CMD_OP_SET ? ISP_CMD_OP_SET_FAILURE : ISP_CMD_OP_GET_FAILURE;
+    c_err.base.header.id = c->base.header.id;
+    c_err.base.header.dummy[0] = isp_status;
+
+    /* Free the received message just before sending the answer message */
+    ISP_ToolCom_PrepareNextCommand();
+
+    /* Send command answer */
+    ISP_ToolCom_SendData((uint8_t*)&c_err, sizeof(c_err), NULL, NULL);
+
+    return ISP_OK;
+  }
 
   switch(c->base.header.operation)
   {

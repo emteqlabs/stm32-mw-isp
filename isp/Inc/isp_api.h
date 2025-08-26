@@ -35,6 +35,7 @@ ISP_StatusTypeDef ISP_Init(ISP_HandleTypeDef *hIsp, void *hDcmipp, uint32_t Came
 ISP_StatusTypeDef ISP_DeInit(ISP_HandleTypeDef *hIsp);
 ISP_StatusTypeDef ISP_Start(ISP_HandleTypeDef *hIsp);
 ISP_StatusTypeDef ISP_BackgroundProcess(ISP_HandleTypeDef *hIsp);
+ISP_StatusTypeDef ISP_GetStatus(ISP_HandleTypeDef *hIsp);
 
 ISP_StatusTypeDef ISP_SetExposureTarget(ISP_HandleTypeDef *hIsp, ISP_ExposureCompTypeDef ExposureCompensation);
 ISP_StatusTypeDef ISP_GetExposureTarget(ISP_HandleTypeDef *hIsp, ISP_ExposureCompTypeDef *pExposureCompensation, uint32_t *pExposureTarget);
