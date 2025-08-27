@@ -45,7 +45,6 @@ typedef enum
 
 /* Debug logs control */
 //#define ALGO_AEC_DBG_LOGS
-//#define ALGO_PERF_DBG_LOGS
 
 /* Max acceptable sensor delay */
 #define ALGO_DELAY_MAX               10
@@ -108,13 +107,6 @@ ISP_AlgoTypeDef ISP_Algo_SensorDelay = {
     .DeInit = ISP_Algo_SensorDelay_DeInit,
     .Process = ISP_Algo_SensorDelay_Process,
 };
-#endif
-
-#ifdef ALGO_PERF_DBG_LOGS
-#define MEAS_ITERATION 10
-uint32_t tickstart;
-uint32_t duration[MEAS_ITERATION];
-uint32_t iter = 0;
 #endif
 
 /* Registered algorithm list */
@@ -1063,51 +1055,11 @@ ISP_StatusTypeDef ISP_Algo_Process(ISP_HandleTypeDef *hIsp)
     algo = hIsp->algorithm[i];
     if ((algo != NULL) && (algo->Process != NULL))
     {
-#ifdef ALGO_PERF_DBG_LOGS
-      uint32_t tickstart = HAL_GetTick();
-#endif
       ret = algo->Process((void*)hIsp, (void*)algo);
       if (ret != ISP_OK)
       {
         return ret;
       }
-#ifdef ALGO_PERF_DBG_LOGS
-      algo->perf_meas[iter] = HAL_GetTick() - tickstart;
-      algo->iter++;
-      if (algo->iter == NB_PERF_MEASURES) {
-        uint32_t sum = 0;
-        for(uint32_t j = 0; j < NB_PERF_MEASURES; j++)
-        {
-          sum += algo->perf_meas[j];
-        }
-        switch (algo->id)
-        {
-          case ISP_ALGO_ID_BADPIXEL:
-            printf("BadPixel algo      ");
-            break;
-#ifdef ISP_MW_SW_AEC_ALGO_SUPPORT
-          case ISP_ALGO_ID_AEC:
-            printf("AEC algo           ");
-            break;
-#endif /* ISP_MW_SW_AEC_ALGO_SUPPORT */
-#ifdef ISP_MW_SW_AWB_ALGO_SUPPORT
-          case ISP_ALGO_ID_AWB:
-            printf("AWB algo           ");
-            break;
-#endif /* ISP_MW_SW_AWB_ALGO_SUPPORT */
-        }
-        uint32_t meas = sum / NB_PERF_MEASURES;
-        if (meas == 0)
-        {
-          printf(" <1 ms\r\n");
-        }
-        else
-        {
-          printf(" %"PRIu32" ms\r\n", meas);
-        }
-        algo->iter = 0;
-      }
-#endif
     }
   }
 
