@@ -531,6 +531,7 @@ typedef struct
       : err == ISP_ERR_APP_HELPER_UNDEFINED ? "App Helper undefined" \
       : err == ISP_ERR_ALGO ? "Algo err" \
       : err == ISP_ERR_SENSORTESTPATTERN ? "Sensor Test Pattern" \
+      : err == ISP_ERR_AWB ? "AWB algo err" \
       : "Unknown error" )
 
 /* Exported functions ------------------------------------------------------- */
