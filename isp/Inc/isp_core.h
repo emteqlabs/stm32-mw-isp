@@ -426,6 +426,8 @@ typedef struct
   uint32_t uId[3];            /* Unique Identifier (3 x 32 bits) */
   uint32_t hasSensorDelay;    /* Whether the firmware supports the Sensor Delay feature */
   uint32_t hasUniqueGamma;    /* Whether the firmware supports the Gamma Correction feature with a unique gamma value for both pipe1 and pipe2 */
+  uint32_t hasUVC;            /* Whether the firmware supports UVC video streaming */
+  uint32_t hasSTAlgo;         /* Whether the firmware supports the new ST 2a Algorithms */
 } ISP_FirmwareConfigTypeDef;
 
 /* Meta data will transit through STLINK if validation test is enabled */
