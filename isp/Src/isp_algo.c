@@ -636,7 +636,7 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
   switch(algo->state)
   {
   case ISP_ALGO_STATE_INIT:
-    ret = ISP_AWB_Init(&IQParamConfig->AWBAlgo);
+    ret = ISP_AWB_Init(&IQParamConfig->AWBAlgo, &IQParamConfig->AWBAlgoExt);
     if (ret != ISP_OK)
     {
       return ret;

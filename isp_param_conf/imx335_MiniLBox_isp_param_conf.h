@@ -85,6 +85,8 @@ static const ISP_IQParamTypeDef ISP_IQParamCacheInit_IMX335 = {
             { { 0, 0, 0, }, { 0, 0, 0, }, { 0, 0, 0, }, },
             { { 0, 0, 0, }, { 0, 0, 0, }, { 0, 0, 0, }, },
         },
+    },
+    .AWBAlgoExt = {
         .referenceRGB = {
             { 61, 66, 27 },
             { 49, 65, 34 },
