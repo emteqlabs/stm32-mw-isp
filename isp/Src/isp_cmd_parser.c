@@ -65,6 +65,8 @@ typedef enum {
   ISP_CMD_SENSORDELAYMEASURE   = 0x1B,
   ISP_CMD_FIRMWARECONFIG       = 0x1C,
   ISP_CMD_UNIQUE_GAMMA         = 0x1D,
+  ISP_CMD_AWBALGOEXT           = 0x1E,
+  ISP_CMD_LUXREF               = 0x1F,
   /* Application API commands */
   ISP_CMD_USER_EXPOSURETARGET  = 0x80,
   ISP_CMD_USER_LISTWBREFMODES  = 0x81,
@@ -162,6 +164,12 @@ typedef struct
 typedef struct
 {
   ISP_CMD_HeaderTypeDef header;
+  ISP_AWBAlgoExtTypeDef data;
+} ISP_CMD_AWBAlgoExtTypeDef;
+
+typedef struct
+{
+  ISP_CMD_HeaderTypeDef header;
   ISP_AWBProfileTypeDef data;
 } ISP_CMD_AWBProfileTypeDef;
 
@@ -234,6 +242,12 @@ typedef struct
   ISP_GammaTypeDef data;
 } ISP_CMD_GammaTypeDef;
 
+typedef struct
+{
+  ISP_CMD_HeaderTypeDef header;
+  ISP_LuxReferenceTypedef data;
+} ISP_CMD_LuxRefTypeDef;
+
 /* Keep sensor info backward compatibility */
 typedef struct
 {
@@ -291,7 +305,9 @@ typedef union {
   ISP_CMD_BadPixelStaticTypeDef    badPixelStatic;
   ISP_CMD_BlackLevelStaticTypeDef  blackLevelStatic;
   ISP_CMD_AECAlgoTypeDef           AECAlgo;
+  ISP_CMD_LuxRefTypeDef            luxRef;
   ISP_CMD_AWBAlgoTypeDef           AWBAlgo;
+  ISP_CMD_AWBAlgoExtTypeDef        AWBAlgoExt;
   ISP_CMD_AWBProfileTypeDef        AWBProfile;
   ISP_CMD_ISPGainStaticTypeDef     ISPGainStatic;
   ISP_CMD_ColorConvStaticTypeDef   colorConvStatic;
@@ -544,6 +560,11 @@ static ISP_StatusTypeDef ISP_CmdParser_SetConfig(ISP_HandleTypeDef *hIsp, uint8_
     IQParamConfig->AECAlgo.antiFlickerFreq = c.AECAlgo.data.antiFlickerFreq;
     break;
 
+  case ISP_CMD_LUXREF:
+    /* Update only IQ params, the algo will consider this update at its next process call */
+    IQParamConfig->luxRef = c.luxRef.data;
+    break;
+
   case ISP_CMD_AWBALGO:
     /* Update only IQ params, the algo will consider this update at its next process call */
     IQParamConfig->AWBAlgo = c.AWBAlgo.data;
@@ -551,6 +572,13 @@ static ISP_StatusTypeDef ISP_CmdParser_SetConfig(ISP_HandleTypeDef *hIsp, uint8_
     {
       IQParamConfig->AWBAlgo.enable = ISP_AWB_ENABLE_RECONFIGURE;
     }
+    break;
+
+  case ISP_CMD_AWBALGOEXT:
+    /* Update only IQ params, the algo will consider this update at its next process call */
+    IQParamConfig->AWBAlgoExt = c.AWBAlgoExt.data;
+    /* Trigger AWB reconfigure to consider these changes */
+    IQParamConfig->AWBAlgo.enable = ISP_AWB_ENABLE_RECONFIGURE;
     break;
 
   case ISP_CMD_ISPGAINSTATIC:
@@ -724,8 +752,16 @@ static ISP_StatusTypeDef ISP_CmdParser_GetConfig(ISP_HandleTypeDef *hIsp, uint8_
     c.AECAlgo.data = IQParamConfig->AECAlgo;
     break;
 
+  case ISP_CMD_LUXREF:
+    c.luxRef.data = IQParamConfig->luxRef;
+    break;
+
   case ISP_CMD_AWBALGO:
     c.AWBAlgo.data = IQParamConfig->AWBAlgo;
+    break;
+
+  case ISP_CMD_AWBALGOEXT:
+    c.AWBAlgoExt.data = IQParamConfig->AWBAlgoExt;
     break;
 
   case ISP_CMD_AWBPROFILE:
