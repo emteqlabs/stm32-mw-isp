@@ -351,7 +351,7 @@ typedef struct
 typedef struct
 {
   uint8_t enable;             /* Enable or disable */
-  char id[ISP_AWB_COLORTEMP_REF][ISP_AWB_PROFILE_ID_MAX_LENGTH]; /* Array of profile names for identification */
+  char label[ISP_AWB_COLORTEMP_REF][ISP_AWB_PROFILE_ID_MAX_LENGTH]; /* Array of profile names for identification */
   uint32_t referenceColorTemp[ISP_AWB_COLORTEMP_REF]; /* Array of reference color temperatures */
   uint32_t ispGainR[ISP_AWB_COLORTEMP_REF];   /* Array of gains of the red component. Unit = 100000000 for "x1.0", 150000000 for "x1.5". Max gain is "x255" */
   uint32_t ispGainG[ISP_AWB_COLORTEMP_REF];   /* Array of gains of the green component */
@@ -362,7 +362,7 @@ typedef struct
 
 typedef struct
 {
-  char id[ISP_AWB_PROFILE_ID_MAX_LENGTH]; /* profile name for identification */
+  char label[ISP_AWB_PROFILE_ID_MAX_LENGTH]; /* profile name for identification */
   uint32_t referenceColorTemp;            /* reference color temperature */
 } ISP_AWBProfileTypeDef;
 

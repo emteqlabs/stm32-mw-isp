@@ -73,7 +73,7 @@ static const ISP_IQParamTypeDef ISP_IQParamCacheInit_IMX335 = {
     },
     .AWBAlgo = {
         .enable = 1,
-        .id = { "JudgeII-A", "JudgeII-TL84", "JudgeII-DAY", "Free Slot", "Free Slot", },
+        .label = { "JudgeII-A", "JudgeII-TL84", "JudgeII-DAY", "Free Slot", "Free Slot", },
         .referenceColorTemp = { 2810, 4015, 6650, 0, 0, },
         .ispGainR = { 137000000, 182000000, 244000000, 0, 0, },
         .ispGainG = { 100000000, 100000000, 100000000, 0, 0, },

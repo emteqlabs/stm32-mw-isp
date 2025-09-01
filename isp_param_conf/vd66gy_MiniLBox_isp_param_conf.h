@@ -73,7 +73,7 @@ static const ISP_IQParamTypeDef ISP_IQParamCacheInit_VD66GY = {
     },
     .AWBAlgo = {
         .enable = 1,
-        .id = { "MiniLBox A", "MiniLBox TL84", "MiniLBox D65", "", "", },
+        .label = { "MiniLBox A", "MiniLBox TL84", "MiniLBox D65", "", "", },
         .referenceColorTemp = { 2665, 3750, 6140, 0, 0, },
         .ispGainR = { 100000000, 119000000, 167000000, 0, 0, },
         .ispGainG = { 111000000, 100000000, 100000000, 0, 0, },

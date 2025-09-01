@@ -741,7 +741,7 @@ static ISP_StatusTypeDef ISP_CmdParser_GetConfig(ISP_HandleTypeDef *hIsp, uint8_
     //TODO: this command is no more applicable since AWB interpolates between profiles
     //TODO: instead of it we may want to add an ISP_CMD_AWBCOLORTEMP command
     //TODO: for the time being this command always returns the first profile (current_awb_profId=0)
-    strcpy(c.AWBProfile.data.id, IQParamConfig->AWBAlgo.id[current_awb_profId]);
+    strcpy(c.AWBProfile.data.label, IQParamConfig->AWBAlgo.label[current_awb_profId]);
     c.AWBProfile.data.referenceColorTemp = IQParamConfig->AWBAlgo.referenceColorTemp[current_awb_profId];
     break;
 

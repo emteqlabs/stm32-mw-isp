@@ -76,7 +76,7 @@ static const ISP_IQParamTypeDef ISP_IQParamCacheInit_DUMMY = {
     },
     .AWBAlgo = {
         .enable = 0,
-        .id = { "", "", "", "", "", },
+        .label = { "", "", "", "", "", },
         .referenceColorTemp = { 0, 0, 0, 0, 0, },
         .ispGainR = { 0, 0, 0, 0, 0, },
         .ispGainG = { 0, 0, 0, 0, 0, },
