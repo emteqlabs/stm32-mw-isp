@@ -292,6 +292,18 @@ ISP_StatusTypeDef ISP_Start(ISP_HandleTypeDef *hIsp)
   /* Configure statistic area if not already configured by ISP_SetStatArea() */
   if ((hIsp->statArea.XSize == 0) || (hIsp->statArea.YSize == 0))
   {
+    if ((IQParamConfig->statAreaStatic.XSize == 0) || (IQParamConfig->statAreaStatic.XSize == ISP_STATWINDOW_MAX))
+    {
+      /* Configure static area width to the maximum value */
+      IQParamConfig->statAreaStatic.XSize = hIsp->sensorInfo.width - IQParamConfig->statAreaStatic.X0;
+    }
+
+    if ((IQParamConfig->statAreaStatic.YSize == 0) || (IQParamConfig->statAreaStatic.YSize == ISP_STATWINDOW_MAX))
+    {
+      /* Configure static area height to the maximum value */
+      IQParamConfig->statAreaStatic.YSize = hIsp->sensorInfo.height - IQParamConfig->statAreaStatic.Y0;
+    }
+
     /* Configure statistic area from IQ params */
     ret = ISP_SVC_ISP_SetStatArea(hIsp, &IQParamConfig->statAreaStatic);
     if (ret != ISP_OK)
