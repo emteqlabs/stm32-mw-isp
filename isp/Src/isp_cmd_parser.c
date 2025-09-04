@@ -73,6 +73,7 @@ typedef enum {
   ISP_CMD_USER_WBREFMODE       = 0x82,
   ISP_CMD_USER_GETDECIMATION   = 0x83,
   ISP_CMD_USER_STATISTICAREA   = 0x84,
+  ISP_CMD_USER_LUX             = 0x85,
   /* Metadata output command */
   ISP_CMD_METADATA_OUTPUT      = 0xFF,
 } ISP_CMD_ID_TypeDef;
@@ -248,6 +249,12 @@ typedef struct
   ISP_LuxReferenceTypedef data;
 } ISP_CMD_LuxRefTypeDef;
 
+typedef struct
+{
+  ISP_CMD_HeaderTypeDef header;
+  uint32_t estimation;
+} ISP_CMD_LuxTypeDef;
+
 /* Keep sensor info backward compatibility */
 typedef struct
 {
@@ -306,6 +313,7 @@ typedef union {
   ISP_CMD_BlackLevelStaticTypeDef  blackLevelStatic;
   ISP_CMD_AECAlgoTypeDef           AECAlgo;
   ISP_CMD_LuxRefTypeDef            luxRef;
+  ISP_CMD_LuxTypeDef               lux;
   ISP_CMD_AWBAlgoTypeDef           AWBAlgo;
   ISP_CMD_AWBAlgoExtTypeDef        AWBAlgoExt;
   ISP_CMD_AWBProfileTypeDef        AWBProfile;
@@ -829,6 +837,11 @@ static ISP_StatusTypeDef ISP_CmdParser_GetConfig(ISP_HandleTypeDef *hIsp, uint8_
   case ISP_CMD_USER_STATISTICAREA:
     /* Get actual value from ISP, which may be defined by a static configuration or by the running application */
     ret = ISP_GetStatArea(hIsp, &c.statArea.data);
+    break;
+
+  case ISP_CMD_USER_LUX:
+    /* Call the application API */
+    ret = ISP_GetLuxEstimation(hIsp, &c.lux.estimation);
     break;
 
   case ISP_CMD_GAMMA:
