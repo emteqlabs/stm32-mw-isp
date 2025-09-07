@@ -22,7 +22,7 @@
 
 
 /* Includes ------------------------------------------------------------------*/
-#if defined (STM32N657xx)
+#if defined (STM32N657xx) || defined(STM32N655xx)
 #include "stm32n6xx_hal.h"
 #else
 #error Add header files for your specific board
