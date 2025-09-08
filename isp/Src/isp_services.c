@@ -2027,7 +2027,7 @@ ISP_StatusTypeDef ISP_SVC_Stats_GetNext(ISP_HandleTypeDef *hIsp, ISP_stat_ready_
   /* Register the callback */
   for (i = 0; i < ISP_SVC_STAT_MAX_CB; i++)
   {
-    if (ISP_SVC_StatEngine.client[i].callback == NULL)
+    if ((ISP_SVC_StatEngine.client[i].callback == NULL) || (ISP_SVC_StatEngine.client[i].callback  == callback))
       break;
   }
 
