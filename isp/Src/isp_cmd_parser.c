@@ -567,7 +567,16 @@ static ISP_StatusTypeDef ISP_CmdParser_SetConfig(ISP_HandleTypeDef *hIsp, uint8_
 
   case ISP_CMD_AWBALGO:
     /* Update only IQ params, the algo will consider this update at its next process call */
+    uint8_t originalRefRGB[ISP_AWB_COLORTEMP_REF][3];
+    memcpy(originalRefRGB, IQParamConfig->AWBAlgo.referenceRGB, sizeof(IQParamConfig->AWBAlgo.referenceRGB));
+    IQParamConfig->AWBAlgo.enable = c.AWBAlgo.data.enable;
     IQParamConfig->AWBAlgo = c.AWBAlgo.data;
+    /* Patch for IQTune that does not handle the referenceRGB new params (IQTune would set all the referenceRGB to 0) */
+    if ((c.AWBAlgo.data.referenceRGB[0][0] == 0) && (c.AWBAlgo.data.referenceColorTemp[0] != 0))
+    {
+      /* Restore original parameters */
+      memcpy(IQParamConfig->AWBAlgo.referenceRGB, originalRefRGB, sizeof(IQParamConfig->AWBAlgo.referenceRGB));
+    }
     if (IQParamConfig->AWBAlgo.enable)
     {
       IQParamConfig->AWBAlgo.enable = ISP_AWB_ENABLE_RECONFIGURE;

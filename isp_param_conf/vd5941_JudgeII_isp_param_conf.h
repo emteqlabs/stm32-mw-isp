@@ -85,8 +85,6 @@ static const ISP_IQParamTypeDef ISP_IQParamCacheInit_VD5941 = {
             { { 0, 0, 0, }, { 0, 0, 0, }, { 0, 0, 0, }, },
             { { 0, 0, 0, }, { 0, 0, 0, }, { 0, 0, 0, }, },
         },
-    },
-    .AWBAlgoExt = {
         .referenceRGB = {
             { 0, 0, 0 },
             { 0, 0, 0 },

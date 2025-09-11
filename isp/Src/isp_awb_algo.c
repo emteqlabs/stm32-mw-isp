@@ -33,7 +33,6 @@
 /* Private function prototypes -----------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 static ISP_AWBAlgoTypeDef ISP_AWB_Config;
-static ISP_AWBAlgoExtTypeDef ISP_AWBExt_Config;
 static uint32_t ISP_AWB_rbRatio[ISP_AWB_COLORTEMP_REF];
 static uint32_t ISP_AWB_NbProfiles;
 static ISP_StatisticsTypeDef ISP_AWB_CurrStats;
@@ -48,16 +47,14 @@ static ISP_ISPGainTypeDef ISP_AWB_CurrISPGain;
   * @brief  ISP_AWB_Init
   *         Initialize and configure the AWB algo
   * @param  pAWBAlgo: Pointer to the AWB tuning configuration
-  * @param  pAWBAlgoExt: Pointer to the AWB-Ext tuning configuration
   * @retval operation result
   */
-ISP_StatusTypeDef ISP_AWB_Init(ISP_AWBAlgoTypeDef *pAWBAlgo, ISP_AWBAlgoExtTypeDef *pAWBAlgoExt)
+ISP_StatusTypeDef ISP_AWB_Init(ISP_AWBAlgoTypeDef *pAWBAlgo)
 {
   int profId;
 
   /* Copy internally the AWB tuning parameters */
   ISP_AWB_Config = *pAWBAlgo;
-  ISP_AWBExt_Config = *pAWBAlgoExt;
 
   /* Reset internal variables */
   memset(&ISP_AWB_CurrStats, 0, sizeof(ISP_AWB_CurrStats));
@@ -70,13 +67,13 @@ ISP_StatusTypeDef ISP_AWB_Init(ISP_AWBAlgoTypeDef *pAWBAlgo, ISP_AWBAlgoExtTypeD
   /* Check that the R/G/B references are not 0 */
   for (profId = 0; profId < ISP_AWB_COLORTEMP_REF && ISP_AWB_Config.referenceColorTemp[profId] != 0; profId++)
   {
-    if ((ISP_AWBExt_Config.referenceRGB[profId][0] == 0) ||
-        (ISP_AWBExt_Config.referenceRGB[profId][1] == 0) ||
-        (ISP_AWBExt_Config.referenceRGB[profId][2] == 0))
+    if ((ISP_AWB_Config.referenceRGB[profId][0] == 0) ||
+        (ISP_AWB_Config.referenceRGB[profId][1] == 0) ||
+        (ISP_AWB_Config.referenceRGB[profId][2] == 0))
     {
       return ISP_ERR_AWB;
     }
-    ISP_AWB_rbRatio[profId] = (1000 * ISP_AWBExt_Config.referenceRGB[profId][0]) / ISP_AWBExt_Config.referenceRGB[profId][2];
+    ISP_AWB_rbRatio[profId] = (1000 * ISP_AWB_Config.referenceRGB[profId][0]) / ISP_AWB_Config.referenceRGB[profId][2];
   }
   ISP_AWB_NbProfiles = profId;
 

@@ -88,8 +88,6 @@ static const ISP_IQParamTypeDef ISP_IQParamCacheInit_DUMMY = {
             { { 0, 0, 0, }, { 0, 0, 0, }, { 0, 0, 0, }, },
             { { 0, 0, 0, }, { 0, 0, 0, }, { 0, 0, 0, }, },
         },
-    },
-    .AWBAlgoExt = {
         .referenceRGB = {
             { 0, 0, 0 },
             { 0, 0, 0 },
