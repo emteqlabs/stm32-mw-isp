@@ -35,7 +35,7 @@ static const ISP_IQParamTypeDef ISP_IQParamCacheInit_DUMMY = {
     .AECAlgo = {
         .enable = 0,
         .exposureCompensation = EXPOSURE_TARGET_0_0_EV,
-        .antiFlickerFreq = 0,
+        .antiFlickerFreq = ANTIFLICKER_NONE,
     },
     .statRemoval = {
         .enable = 0,
@@ -131,7 +131,7 @@ static const ISP_IQParamTypeDef ISP_IQParamCacheInit_DUMMY = {
         .LL_Lum1 = 0,
         .LL_Expo2 = 0,
         .LL_Lum2 = 0,
-        .calibFactor = 0,
+        .calibFactor = 0.000f,
     },
 };
 

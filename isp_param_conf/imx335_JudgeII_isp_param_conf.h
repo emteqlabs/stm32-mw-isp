@@ -32,7 +32,7 @@ static const ISP_IQParamTypeDef ISP_IQParamCacheInit_IMX335 = {
     .AECAlgo = {
         .enable = 1,
         .exposureCompensation = EXPOSURE_TARGET_0_0_EV,
-        .antiFlickerFreq = 0,
+        .antiFlickerFreq = ANTIFLICKER_NONE,
     },
     .statRemoval = {
         .enable = 0,
@@ -128,7 +128,7 @@ static const ISP_IQParamTypeDef ISP_IQParamCacheInit_IMX335 = {
         .LL_Lum1 = 10,
         .LL_Expo2 = 33266,
         .LL_Lum2 = 36,
-        .calibFactor = 0.905,
+        .calibFactor = 0.905f,
     },
 };
 

@@ -353,6 +353,16 @@ static ISP_SVC_StatEngineStage GetNextStatStage(ISP_SVC_StatEngineStage current)
     }
     break;
 
+  case ISP_STAT_CFG_CYCLE_SIZE:
+    /* Shall not happen, just add this case to silence a Wswitch-enum warning */
+    break;
+
+  case ISP_STAT_CFG_UP_BINS_0_2:
+  case ISP_STAT_CFG_UP_BINS_3_5:
+  case ISP_STAT_CFG_UP_BINS_6_8:
+  case ISP_STAT_CFG_DOWN_BINS_0_2:
+  case ISP_STAT_CFG_DOWN_BINS_3_5:
+  case ISP_STAT_CFG_DOWN_BINS_6_8:
   default:
     /* In the middle of the bins measurement: continue with the next bins part */
     next = (ISP_SVC_StatEngineStage) (current + 1);
@@ -486,6 +496,9 @@ ISP_StatusTypeDef ISP_SVC_ISP_SetDemosaicing(ISP_HandleTypeDef *hIsp, ISP_Demosa
         break;
       case ISP_DEMOS_TYPE_BGGR:
         rawBayerCfg.RawBayerType = DCMIPP_RAWBAYER_BGGR;
+        break;
+      case ISP_DEMOS_TYPE_MONO:
+        /* Shall not happen, just add this case to silence a Wswitch-enum warning */
         break;
       default:
         rawBayerCfg.RawBayerType = DCMIPP_RAWBAYER_RGGB;
@@ -1475,6 +1488,8 @@ ISP_StatusTypeDef ISP_SVC_Misc_SendSensorDelayMeasure(ISP_HandleTypeDef *hIsp, I
 #ifdef ISP_MW_TUNING_TOOL_SUPPORT
   return ISP_CmdParser_SendSensorDelayMeasure(hIsp, pSensorDelay);
 #else
+  (void)hIsp; /* unused */
+  (void)pSensorDelay; /* unused */
   return ISP_OK;
 #endif
 }
@@ -1802,6 +1817,10 @@ void ISP_SVC_Stats_Gather(ISP_HandleTypeDef *hIsp)
     ReadStatHistogram(hIsp, &ongoing->down.histogram[9]);
     break;
 
+  case ISP_STAT_CFG_CYCLE_SIZE:
+    /* Shall not happen, just add this case to silence a Wswitch-enum warning */
+    break;
+
   default:
     /* No Read */
     break;
@@ -1858,6 +1877,10 @@ void ISP_SVC_Stats_Gather(ISP_HandleTypeDef *hIsp)
 
   case ISP_STAT_CFG_DOWN_BINS_9_11:
     SetStatConfig(statConf, &statConfDownBins_9_11);
+    break;
+
+  case ISP_STAT_CFG_CYCLE_SIZE:
+    /* Shall not happen, just add this case to silencet a Wswitch-enum warning */
     break;
 
   default:
@@ -2170,7 +2193,7 @@ int32_t ISP_SVC_Misc_GetEstimatedLux(ISP_HandleTypeDef *hIsp)
     return 0;
   }
 
-  lux = (double)IQParamConfig->luxRef.calibFactor * (a * globalExposure + b) * stats.down.averageL / globalExposure;
+  lux = (int32_t)(IQParamConfig->luxRef.calibFactor * (a * globalExposure + b) * stats.down.averageL / globalExposure);
 
   if (lux <= IQParamConfig->luxRef.HL_LuxRef * 0.9)
   {
@@ -2183,10 +2206,10 @@ int32_t ISP_SVC_Misc_GetEstimatedLux(ISP_HandleTypeDef *hIsp)
     b = (IQParamConfig->luxRef.LL_LuxRef  * (double)IQParamConfig->luxRef.LL_Expo1 / IQParamConfig->luxRef.LL_Lum1) -
         (a * IQParamConfig->luxRef.LL_Expo1);
 
-    lux = (double)IQParamConfig->luxRef.calibFactor * (a * globalExposure + b) * stats.down.averageL / globalExposure;
+    lux = (int32_t)(IQParamConfig->luxRef.calibFactor * (a * globalExposure + b) * stats.down.averageL / globalExposure);
   }
 
-  Meta.lux = (lux < 0) ? 0 : lux;
+  Meta.lux = (uint32_t)((lux < 0) ? 0 : lux);
 
   return (lux < 0) ? 0 : lux;
 }

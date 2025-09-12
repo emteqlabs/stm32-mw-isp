@@ -750,7 +750,7 @@ ISP_StatusTypeDef ISP_GetLuxEstimation(ISP_HandleTypeDef *hIsp, uint32_t *pLux)
   }
   else
   {
-    *pLux = lux;
+    *pLux = (uint32_t)lux;
   }
 
   return ret;

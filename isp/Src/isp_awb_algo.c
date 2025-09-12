@@ -51,7 +51,7 @@ static ISP_ISPGainTypeDef ISP_AWB_CurrISPGain;
   */
 ISP_StatusTypeDef ISP_AWB_Init(ISP_AWBAlgoTypeDef *pAWBAlgo)
 {
-  int profId;
+  uint32_t profId;
 
   /* Copy internally the AWB tuning parameters */
   ISP_AWB_Config = *pAWBAlgo;
@@ -73,7 +73,7 @@ ISP_StatusTypeDef ISP_AWB_Init(ISP_AWBAlgoTypeDef *pAWBAlgo)
     {
       return ISP_ERR_AWB;
     }
-    ISP_AWB_rbRatio[profId] = (1000 * ISP_AWB_Config.referenceRGB[profId][0]) / ISP_AWB_Config.referenceRGB[profId][2];
+    ISP_AWB_rbRatio[profId] = (1000U * ISP_AWB_Config.referenceRGB[profId][0]) / ISP_AWB_Config.referenceRGB[profId][2];
   }
   ISP_AWB_NbProfiles = profId;
 
@@ -101,9 +101,9 @@ ISP_StatusTypeDef ISP_AWB_Init(ISP_AWBAlgoTypeDef *pAWBAlgo)
   */
 ISP_StatusTypeDef ISP_AWB_GetConfig(ISP_StatisticsTypeDef *pStats, ISP_ColorConvTypeDef *pColorConvConfig, ISP_ISPGainTypeDef *pISPGainConfig, uint32_t *pColorTemp)
 {
-  int profId, exactProfId, upProfId = 0, downProfId = 0;
+  int exactProfId;
   double interpolRatio = 0.0;
-  uint32_t rb_ratio;
+  uint32_t rb_ratio, profId, upProfId = 0, downProfId = 0;
   int64_t i64;
   int i, j;
 
@@ -139,7 +139,7 @@ ISP_StatusTypeDef ISP_AWB_GetConfig(ISP_StatisticsTypeDef *pStats, ISP_ColorConv
   else if (profId == ISP_AWB_NbProfiles)
   {
     /* R/B ratio is lower that the lowest reference. Select the last defined profile (highest color temp) */
-    exactProfId = profId - 1;
+    exactProfId = (int)profId - 1;
   }
   else
   {
@@ -156,7 +156,7 @@ ISP_StatusTypeDef ISP_AWB_GetConfig(ISP_StatisticsTypeDef *pStats, ISP_ColorConv
 #ifdef ALGO_AWB_DBG_LOGS
       printf("R/B=%4ld  -  Forcing down profile (ratio=%d%%)\n", rb_ratio, (int)(100 * interpolRatio));
 #endif
-      exactProfId = downProfId;
+      exactProfId = (int)downProfId;
     }
     else if (interpolRatio >= 1.0f - ISP_AWB_STICKY)
     {
@@ -164,7 +164,7 @@ ISP_StatusTypeDef ISP_AWB_GetConfig(ISP_StatisticsTypeDef *pStats, ISP_ColorConv
 #ifdef ALGO_AWB_DBG_LOGS
       printf("R/B=%4ld  -  Forcing up profile (ratio=%d%%)\n", rb_ratio, (int)(100 * interpolRatio));
 #endif
-      exactProfId = upProfId;
+      exactProfId = (int)upProfId;
     }
   }
 
@@ -193,26 +193,26 @@ ISP_StatusTypeDef ISP_AWB_GetConfig(ISP_StatisticsTypeDef *pStats, ISP_ColorConv
     {
       for (j = 0; j < 3; j++)
       {
-        i64 = ISP_AWB_Config.coeff[downProfId][i][j] + interpolRatio *
-              ((int64_t)ISP_AWB_Config.coeff[upProfId][i][j] - ISP_AWB_Config.coeff[downProfId][i][j]);
+       i64 = (int64_t)(ISP_AWB_Config.coeff[downProfId][i][j] + interpolRatio *
+             (ISP_AWB_Config.coeff[upProfId][i][j] - ISP_AWB_Config.coeff[downProfId][i][j]));
         pColorConvConfig->coeff[i][j] = (int32_t)i64;
       }
     }
 
-    i64 = ISP_AWB_Config.ispGainR[downProfId] + interpolRatio *
-          ((int64_t)ISP_AWB_Config.ispGainR[upProfId] - ISP_AWB_Config.ispGainR[downProfId]);
+    i64 = (int64_t)(ISP_AWB_Config.ispGainR[downProfId] + interpolRatio *
+          ((int64_t)ISP_AWB_Config.ispGainR[upProfId] - ISP_AWB_Config.ispGainR[downProfId]));
     pISPGainConfig->ispGainR = (uint32_t)i64;
-    i64 = ISP_AWB_Config.ispGainG[downProfId] + interpolRatio *
-          ((int64_t)ISP_AWB_Config.ispGainG[upProfId] - ISP_AWB_Config.ispGainG[downProfId]);
+    i64 = (int64_t)(ISP_AWB_Config.ispGainG[downProfId] + interpolRatio *
+          ((int64_t)ISP_AWB_Config.ispGainG[upProfId] - ISP_AWB_Config.ispGainG[downProfId]));
     pISPGainConfig->ispGainG = (uint32_t)i64;
-    i64 = ISP_AWB_Config.ispGainB[downProfId] + interpolRatio *
-          ((int64_t)ISP_AWB_Config.ispGainB[upProfId] - ISP_AWB_Config.ispGainB[downProfId]);
+    i64 = (int64_t)(ISP_AWB_Config.ispGainB[downProfId] + interpolRatio *
+          ((int64_t)ISP_AWB_Config.ispGainB[upProfId] - ISP_AWB_Config.ispGainB[downProfId]));
     pISPGainConfig->ispGainB = (uint32_t)i64;
 
-    *pColorTemp = ISP_AWB_Config.referenceColorTemp[downProfId] + interpolRatio *
-                  (ISP_AWB_Config.referenceColorTemp[upProfId] - ISP_AWB_Config.referenceColorTemp[downProfId]);
+    *pColorTemp = (uint32_t)(ISP_AWB_Config.referenceColorTemp[downProfId] + interpolRatio *
+                  (ISP_AWB_Config.referenceColorTemp[upProfId] - ISP_AWB_Config.referenceColorTemp[downProfId]));
 #ifdef ALGO_AWB_DBG_LOGS
-    printf("R/B=%4ld  -  Profile between %d and %d (%d%%)  -  ColoTemp = %ld\n", rb_ratio, upProfId, downProfId, (int)(100 * interpolRatio), *pColorTemp);
+    printf("R/B=%4"PRIu32"  -  Profile between %"PRIu32" and %"PRIu32" (%"PRIu16"%%)  -  ColoTemp = %"PRIu32"\r\n", rb_ratio, upProfId, downProfId, (int)(100 * interpolRatio), *pColorTemp);
 #endif
   }
 

@@ -59,7 +59,6 @@ static uint32_t previous_lux = 0;
 
 /* Global variables ----------------------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
-
 void isp_ae_init(ISP_HandleTypeDef *hIsp)
 {
   IQParamConfig = ISP_SVC_IQParam_Get(hIsp);
@@ -81,9 +80,9 @@ static void isp_ae__get_gain_expo_multiple(uint32_t gain, uint32_t exposure,
     return;
   }
 
-  compat_period_us = 1000 * 1000 / (2 * IQParamConfig->AECAlgo.antiFlickerFreq);
+  compat_period_us = 1000U * 1000U / (2U * IQParamConfig->AECAlgo.antiFlickerFreq);
   up_equiv_exposure = (1 + exposure / compat_period_us) * compat_period_us;
-  if ((exposure > compat_period_us) && (exposure <  0.95F * up_equiv_exposure))
+  if ((exposure > compat_period_us) && (exposure < 0.95 * up_equiv_exposure))
   {
     /* Make exposure a multiple of the flickering period in case exposure is higher than the
        flickering period and we are 5% under a multiple value */
@@ -122,7 +121,7 @@ static void isp_ae_get_gain_expo_maximized(uint32_t gain, uint32_t exposure,
     *equiv_gain = 0;
     *equiv_exposure = global_exposure;
     /* Fix rounding error when close to max value */
-    if (*equiv_exposure > 0.98F * pSensorInfo->exposure_max)
+    if (*equiv_exposure > 0.98 * pSensorInfo->exposure_max)
     {
       *equiv_exposure = pSensorInfo->exposure_max;
     }
@@ -155,7 +154,7 @@ void isp_ae_get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposur
     if (new_global_exposure <= pSensorInfo->exposure_max)
     {
       *pGain = 0;
-      *pExposure = (new_global_exposure < pSensorInfo->exposure_min) ? pSensorInfo->exposure_min : new_global_exposure;
+      *pExposure = (new_global_exposure < pSensorInfo->exposure_min) ? pSensorInfo->exposure_min : (uint32_t)new_global_exposure;
     }
     else
     {
@@ -170,8 +169,8 @@ void isp_ae_get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposur
   isp_ae_get_gain_expo_maximized(gain, exposure, &curGain, &curExposure);
 
   /* Check if coarse convergence is reached */
-  if (((lux > AE_LOW_LUX_LIMIT) && (abs(averageL - IQParamConfig->AECAlgo.exposureTarget) > MAX((float)IQParamConfig->AECAlgo.exposureTarget * AE_TOLERANCE, AE_COARSE_TOLERANCE))) ||
-      ((lux <= AE_LOW_LUX_LIMIT) && (abs(averageL - IQParamConfig->AECAlgo.exposureTarget) > MAX((float)IQParamConfig->AECAlgo.exposureTarget * AE_TOLERANCE_LOW_LUX, AE_COARSE_TOLERANCE_LOW_LUX(IQParamConfig->AECAlgo.exposureTarget)))))
+  if (((lux > AE_LOW_LUX_LIMIT) && (abs((int32_t)averageL - (int32_t)IQParamConfig->AECAlgo.exposureTarget) > MAX((float)IQParamConfig->AECAlgo.exposureTarget * AE_TOLERANCE, AE_COARSE_TOLERANCE))) ||
+      ((lux <= AE_LOW_LUX_LIMIT) && (abs((int32_t)averageL - (int32_t)IQParamConfig->AECAlgo.exposureTarget) > MAX((float)IQParamConfig->AECAlgo.exposureTarget * AE_TOLERANCE_LOW_LUX, AE_COARSE_TOLERANCE_LOW_LUX(IQParamConfig->AECAlgo.exposureTarget)))))
   {
     if (lux <= IQParamConfig->luxRef.HL_LuxRef)
     {
@@ -200,14 +199,14 @@ void isp_ae_get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposur
     {
       /* Calculate coefficient for very low lux model as we reach the limit of the previous one */
       d = pSensorInfo->exposure_max * pow(10, (double)pSensorInfo->again_max / 20000);
-      c = ((b / (((double)custom_low_lux_limit / (IQParamConfig->AECAlgo.exposureTarget * IQParamConfig->luxRef.calibFactor)) - (double)a)) - d) / custom_low_lux_limit;
+      c = ((b / (((double)custom_low_lux_limit / ((double)IQParamConfig->AECAlgo.exposureTarget * IQParamConfig->luxRef.calibFactor)) - (double)a)) - d) / custom_low_lux_limit;
 
       new_global_exposure = (c * (double)lux) + d;
     }
     else
     {
       /* Else apply previous estimation model with a and b coefficients */
-      new_global_exposure = b / (((double)lux / (IQParamConfig->AECAlgo.exposureTarget * IQParamConfig->luxRef.calibFactor)) - (double)a);
+      new_global_exposure = b / (((double)lux / ((double)IQParamConfig->AECAlgo.exposureTarget * IQParamConfig->luxRef.calibFactor)) - (double)a);
     }
 
     /* Check validity of new global exposure */
@@ -220,7 +219,7 @@ void isp_ae_get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposur
         new_global_exposure = -1;
 
         /* Same lux estimation but previous setting did not allow convergence, so we need to change it */
-        if ((abs(lux - previous_lux) <= (float)lux * 0.05) && (lux != 0))
+        if ((abs((int32_t)lux - (int32_t)previous_lux) <= (float)lux * 0.05) && (lux != 0))
         {
           /* Use the luminance information for readjustment */
           new_global_exposure = cur_global_exposure * ((double)IQParamConfig->AECAlgo.exposureTarget / averageL);
@@ -263,7 +262,7 @@ void isp_ae_get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposur
         new_global_exposure = -1;
 
         /* Same lux estimation but previous setting did not allow convergence, so we need to change it */
-        if ((abs(lux - previous_lux) <= (float)lux * 0.05) && (lux != 0))
+        if ((abs((int32_t)lux - (int32_t)previous_lux) <= (float)lux * 0.05) && (lux != 0))
         {
           /* Use the luminance information for readjustment */
           new_global_exposure = cur_global_exposure * ((double)IQParamConfig->AECAlgo.exposureTarget / averageL);
@@ -302,7 +301,7 @@ void isp_ae_get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposur
     if (new_global_exposure <= pSensorInfo->exposure_max)
     {
       *pGain = 0;
-      *pExposure = (new_global_exposure < pSensorInfo->exposure_min) ? pSensorInfo->exposure_min : new_global_exposure;
+      *pExposure = (new_global_exposure < pSensorInfo->exposure_min) ? pSensorInfo->exposure_min : (uint32_t)new_global_exposure;
     }
     else
     {
@@ -310,7 +309,7 @@ void isp_ae_get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposur
       *pGain = (uint32_t)(20 * 1000 * log10(new_global_exposure / (float)(*pExposure)));
 
       /* Limit digital gain (lux value is very low and the gain is already very high and we need to avoid oscillations) */
-      if ((*pGain > pSensorInfo->again_max) && (abs(*pGain - curGain) > AE_MAX_GAIN_INCREMENT))
+      if ((*pGain > pSensorInfo->again_max) && (abs((int32_t)*pGain - (int32_t)curGain) > AE_MAX_GAIN_INCREMENT))
       {
         *pGain = *pGain < curGain ? (curGain < AE_MAX_GAIN_INCREMENT ? 0 : curGain - AE_MAX_GAIN_INCREMENT) : curGain + AE_MAX_GAIN_INCREMENT;
       }
@@ -322,12 +321,12 @@ void isp_ae_get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposur
     /* Convergence is reached */
 
     /* Coarse convergence reached, refine convergence */
-    if (((lux > AE_LOW_LUX_LIMIT) && (abs(averageL - IQParamConfig->AECAlgo.exposureTarget) > AE_FINE_TOLERANCE)) ||
-        ((lux <= AE_LOW_LUX_LIMIT) && (abs(averageL - IQParamConfig->AECAlgo.exposureTarget) > AE_FINE_TOLERANCE_LOW_LUX(IQParamConfig->AECAlgo.exposureTarget))))
+    if (((lux > AE_LOW_LUX_LIMIT) && (abs((int32_t)averageL - (int32_t)IQParamConfig->AECAlgo.exposureTarget) > AE_FINE_TOLERANCE)) ||
+        ((lux <= AE_LOW_LUX_LIMIT) && (abs((int32_t)averageL - (int32_t)IQParamConfig->AECAlgo.exposureTarget) > AE_FINE_TOLERANCE_LOW_LUX(IQParamConfig->AECAlgo.exposureTarget))))
     {
       if (averageL < IQParamConfig->AECAlgo.exposureTarget)
       {
-        /* Sligthly increase exposure */
+        /* Slightly increase exposure */
         if (cur_global_exposure <= pSensorInfo->exposure_max)
         {
           new_global_exposure = averageL ? cur_global_exposure * (double)IQParamConfig->AECAlgo.exposureTarget / averageL : cur_global_exposure + AE_EXPOSURE_FINE_INCREMENT;
@@ -354,7 +353,7 @@ void isp_ae_get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposur
       if (new_global_exposure <= pSensorInfo->exposure_max)
       {
         *pGain = 0;
-        *pExposure = (new_global_exposure < pSensorInfo->exposure_min) ? pSensorInfo->exposure_min : new_global_exposure;
+        *pExposure = (new_global_exposure < pSensorInfo->exposure_min) ? pSensorInfo->exposure_min : (uint32_t)new_global_exposure;
       }
       else
       {
