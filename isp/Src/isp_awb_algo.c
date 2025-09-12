@@ -97,7 +97,7 @@ ISP_StatusTypeDef ISP_AWB_Init(ISP_AWBAlgoTypeDef *pAWBAlgo)
   * @param  pStats: pointer to the current RGB statistics
   * @param  pColorConvConfig: pointer to the output Color Conversion configuration
   * @param  pISPGainConfig: pointer to the output ISP Gain configuration
-  * @param  pColorTemp: pointer the output estimated color temperature
+  * @param  pColorTemp: pointer to the output estimated color temperature
   * @retval operation result
   */
 ISP_StatusTypeDef ISP_AWB_GetConfig(ISP_StatisticsTypeDef *pStats, ISP_ColorConvTypeDef *pColorConvConfig, ISP_ISPGainTypeDef *pISPGainConfig, uint32_t *pColorTemp)
@@ -134,12 +134,12 @@ ISP_StatusTypeDef ISP_AWB_GetConfig(ISP_StatisticsTypeDef *pStats, ISP_ColorConv
 
   if (profId == 0)
   {
-    /* R/B ratio is greater that the largest reference. Select the first profile (lowest color temp) */
+    /* R/B ratio is greater than the largest reference. Select the first profile (lowest color temp) */
     exactProfId = 0;
   }
   else if (profId == ISP_AWB_NbProfiles)
   {
-    /* R/B ratio is lower that the lowest reference. Select the last defined profile (highest color temp) */
+    /* R/B ratio is lower than the lowest reference. Select the last defined profile (highest color temp) */
     exactProfId = (int)profId - 1;
   }
   else
@@ -213,7 +213,7 @@ ISP_StatusTypeDef ISP_AWB_GetConfig(ISP_StatisticsTypeDef *pStats, ISP_ColorConv
     *pColorTemp = (uint32_t)(ISP_AWB_Config.referenceColorTemp[downProfId] + interpolRatio *
                   (ISP_AWB_Config.referenceColorTemp[upProfId] - ISP_AWB_Config.referenceColorTemp[downProfId]));
 #ifdef ALGO_AWB_DBG_LOGS
-    printf("R/B=%4"PRIu32"  -  Profile between %"PRIu32" and %"PRIu32" (%"PRIu16"%%)  -  ColoTemp = %"PRIu32"\r\n", rb_ratio, upProfId, downProfId, (int)(100 * interpolRatio), *pColorTemp);
+    printf("R/B=%4"PRIu32"  -  Profile between %"PRIu32" and %"PRIu32" (%"PRIu16"%%)  -  ColorTemp = %"PRIu32"\r\n", rb_ratio, upProfId, downProfId, (int)(100 * interpolRatio), *pColorTemp);
 #endif
   }
 

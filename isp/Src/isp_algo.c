@@ -195,7 +195,7 @@ ISP_StatusTypeDef ISP_Algo_BadPixel_Process(void *hIsp, void *pAlgo)
   if (Step++ >= 0)
   {
     /* Measure the number of bad pixels */
-    ret  = ISP_SVC_ISP_GetBadPixel(hIsp, &BadPixelConfig);
+    ret = ISP_SVC_ISP_GetBadPixel(hIsp, &BadPixelConfig);
     if (ret != ISP_OK)
     {
       return ret;
@@ -279,7 +279,7 @@ ISP_StatusTypeDef ISP_Algo_AEC_Init(void *hIsp, void *pAlgo)
       gainConfig.gain = pIsp_handle->sensorInfo.gain_min;
     }
 
-    if ((ISP_SVC_Sensor_SetExposure(hIsp, &exposureConfig) != ISP_OK) || (ISP_SVC_Sensor_SetGain(hIsp, &gainConfig)!= ISP_OK))
+    if ((ISP_SVC_Sensor_SetExposure(hIsp, &exposureConfig) != ISP_OK) || (ISP_SVC_Sensor_SetGain(hIsp, &gainConfig) != ISP_OK))
     {
       return ISP_ERR_ALGO;
     }
@@ -443,8 +443,8 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
     }
     else
     {
-    	ret = ISP_ERR_ALGO;
-    	printf("ERROR: Lux value of the scene cannot be estimated\r\n");
+      ret = ISP_ERR_ALGO;
+      printf("ERROR: Lux value of the scene cannot be estimated\r\n");
     }
 
     /* Ask for stats */
@@ -480,7 +480,7 @@ double ISP_Algo_ApplyGammaInverse(ISP_HandleTypeDef *hIsp, uint32_t comp)
   double out;
 
   /* Check if gamma is enabled */
-  if (ISP_SVC_Misc_IsGammaEnabled(hIsp, 1 /*main pipe*/) != 0) {
+  if (ISP_SVC_Misc_IsGammaEnabled(hIsp, 1 /*main pipe*/)) {
     out = 255 * pow((float)comp / 255, 1.0 / 2.2);
   }
   else

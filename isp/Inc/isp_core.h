@@ -342,7 +342,7 @@ typedef struct
   uint8_t enable;                               /* Enable or disable */
   ISP_ExposureCompTypeDef exposureCompensation; /* Exposure Compensation (in EV) */
   uint32_t exposureTarget;                      /* Exposure Target */
-  ISP_AntiFlickerTypeDef antiFlickerFreq;       /* AntiFlicker frequency (50Hz, 60Hz  or 0 for disabling the feature */
+  ISP_AntiFlickerTypeDef antiFlickerFreq;       /* AntiFlicker frequency (50Hz, 60Hz or 0 for disabling the feature */
 } ISP_AECAlgoTypeDef;
 
 #define ISP_AWB_COLORTEMP_REF               (5U)
@@ -474,7 +474,7 @@ typedef struct
 #define ISP_DEMOS_STRENGTH_MAX              (7U)
 #define ISP_STATREMOVAL_HEADLINES_MAX       (7U)
 #define ISP_STATREMOVAL_VALIDLINES_MAX      (4094U)
-#define ISP_CONTAST_LUMCOEFF_MAX            (394U)
+#define ISP_CONTRAST_LUMCOEFF_MAX           (394U)
 #define ISP_BADPIXEL_STRENGTH_MAX           (7U)
 #define ISP_EXPOSURE_GAIN_MAX               (1600000000U)
 #define ISP_COLORCONV_MAX                   (399000000)
@@ -484,7 +484,7 @@ typedef struct
 
 /* A well exposed picture (taking into account the gamma correction) has its
  * Luminance average at the middle of the luminance range.
- * Here luminance range is [0, 255] so a well expose picture should have a
+ * Here luminance range is [0, 255] so a well exposed picture should have a
  * luminance equal to 128 gamma applied. In our case, the statistics are recovered
  * before the gamma correction so the target luminance for a well exposed picture
  * is 56 (((56/255)^(1/2.2))*255 = 128)

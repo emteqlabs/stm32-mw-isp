@@ -126,15 +126,15 @@ ISP_StatusTypeDef ISP_Init(ISP_HandleTypeDef *hIsp,
   {
     decimation.factor = ISP_DECIM_FACTOR_1;
   }
-  else if ((hIsp->sensorInfo.width  / ISP_DECIM_FACTOR_2) < ISP_RAW_MAX_WIDTH)
+  else if ((hIsp->sensorInfo.width / ISP_DECIM_FACTOR_2) < ISP_RAW_MAX_WIDTH)
   {
     decimation.factor = ISP_DECIM_FACTOR_2;
   }
-  else if ((hIsp->sensorInfo.width  / ISP_DECIM_FACTOR_4) < ISP_RAW_MAX_WIDTH)
+  else if ((hIsp->sensorInfo.width / ISP_DECIM_FACTOR_4) < ISP_RAW_MAX_WIDTH)
   {
     decimation.factor = ISP_DECIM_FACTOR_4;
   }
-  else if ((hIsp->sensorInfo.width  / ISP_DECIM_FACTOR_8) < ISP_RAW_MAX_WIDTH)
+  else if ((hIsp->sensorInfo.width / ISP_DECIM_FACTOR_8) < ISP_RAW_MAX_WIDTH)
   {
     decimation.factor = ISP_DECIM_FACTOR_8;
   }
@@ -681,7 +681,7 @@ uint32_t ISP_GetMainFrameId(ISP_HandleTypeDef *hIsp)
   */
 void ISP_IncAncillaryFrameId(ISP_HandleTypeDef *hIsp)
 {
-	ISP_SVC_Misc_IncAncillaryFrameId(hIsp);
+  ISP_SVC_Misc_IncAncillaryFrameId(hIsp);
 }
 
 /**

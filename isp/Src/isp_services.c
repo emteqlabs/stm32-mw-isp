@@ -268,7 +268,7 @@ static ISP_SVC_StatEngineStage GetNextStatStage(ISP_SVC_StatEngineStage current)
       next = ISP_STAT_CFG_UP_BINS_0_2;
     }
     /* Skip Up Bins : try Down Avg */
-    else if (ISP_SVC_StatEngine.downRequest &  ISP_STAT_TYPE_AVG)
+    else if (ISP_SVC_StatEngine.downRequest & ISP_STAT_TYPE_AVG)
     {
       next = ISP_STAT_CFG_DOWN_AVG;
     }
@@ -652,11 +652,11 @@ ISP_StatusTypeDef ISP_SVC_ISP_SetContrast(ISP_HandleTypeDef *hIsp, ISP_ContrastT
   DCMIPP_ContrastConfTypeDef contrast;
 
   if ((hIsp == NULL) || (pConfig == NULL) ||
-      (pConfig->coeff.LUM_0 > ISP_CONTAST_LUMCOEFF_MAX) ||  (pConfig->coeff.LUM_32 > ISP_CONTAST_LUMCOEFF_MAX) ||
-      (pConfig->coeff.LUM_64 > ISP_CONTAST_LUMCOEFF_MAX) || (pConfig->coeff.LUM_96 > ISP_CONTAST_LUMCOEFF_MAX) ||
-      (pConfig->coeff.LUM_128 > ISP_CONTAST_LUMCOEFF_MAX) || (pConfig->coeff.LUM_160 > ISP_CONTAST_LUMCOEFF_MAX) ||
-      (pConfig->coeff.LUM_192 > ISP_CONTAST_LUMCOEFF_MAX) || (pConfig->coeff.LUM_224 > ISP_CONTAST_LUMCOEFF_MAX) ||
-      (pConfig->coeff.LUM_256 > ISP_CONTAST_LUMCOEFF_MAX))
+      (pConfig->coeff.LUM_0 > ISP_CONTRAST_LUMCOEFF_MAX) || (pConfig->coeff.LUM_32 > ISP_CONTRAST_LUMCOEFF_MAX) ||
+      (pConfig->coeff.LUM_64 > ISP_CONTRAST_LUMCOEFF_MAX) || (pConfig->coeff.LUM_96 > ISP_CONTRAST_LUMCOEFF_MAX) ||
+      (pConfig->coeff.LUM_128 > ISP_CONTRAST_LUMCOEFF_MAX) || (pConfig->coeff.LUM_160 > ISP_CONTRAST_LUMCOEFF_MAX) ||
+      (pConfig->coeff.LUM_192 > ISP_CONTRAST_LUMCOEFF_MAX) || (pConfig->coeff.LUM_224 > ISP_CONTRAST_LUMCOEFF_MAX) ||
+      (pConfig->coeff.LUM_256 > ISP_CONTRAST_LUMCOEFF_MAX))
   {
     return ISP_ERR_CONTRAST_EINVAL;
   }
@@ -1319,7 +1319,7 @@ ISP_StatusTypeDef ISP_SVC_Misc_GetFirmwareConfig(ISP_FirmwareConfigTypeDef *pCon
   pConfig->hasGamma = 0;
   pConfig->hasUniqueGamma = 1;
   pConfig->hasAntiFlicker = 1;
-  /* DevideId */
+  /* DeviceId */
   switch(HAL_GetDEVID())
   {
   case 0x00006200: /* STM32N645xx */
@@ -1543,28 +1543,28 @@ ISP_StatusTypeDef ISP_SVC_Misc_StartPreview(ISP_HandleTypeDef *hIsp)
   *         Check if the gamma block is enabled
   * @param  hIsp: ISP device handle
   * @param  Pipe: DCMIPP pipe line
-  * @retval 1 if enabled 0 otherwise
+  * @retval true if enabled false otherwise
   */
 bool ISP_SVC_Misc_IsGammaEnabled(ISP_HandleTypeDef *hIsp, uint32_t Pipe)
 {
-  uint8_t ret;
+  bool ret;
 
   /* Check handle validity */
   if (hIsp == NULL)
   {
-    return ISP_ERR_EINVAL;
+    return false;
   }
 
   switch(Pipe)
   {
   case 1:
-    ret = (uint8_t) HAL_DCMIPP_PIPE_IsEnabledGammaConversion(hIsp->hDcmipp, DCMIPP_PIPE1);
+    ret = (bool) HAL_DCMIPP_PIPE_IsEnabledGammaConversion(hIsp->hDcmipp, DCMIPP_PIPE1);
     break;
   case 2:
-    ret = (uint8_t) HAL_DCMIPP_PIPE_IsEnabledGammaConversion(hIsp->hDcmipp, DCMIPP_PIPE2);
+    ret = (bool) HAL_DCMIPP_PIPE_IsEnabledGammaConversion(hIsp->hDcmipp, DCMIPP_PIPE2);
     break;
   default:
-    ret = 0; /*  No gamma on pipe 0 */
+    ret = false; /* No gamma on pipe 0 */
   }
 
   return ret;
@@ -2050,7 +2050,7 @@ ISP_StatusTypeDef ISP_SVC_Stats_GetNext(ISP_HandleTypeDef *hIsp, ISP_stat_ready_
   /* Register the callback */
   for (i = 0; i < ISP_SVC_STAT_MAX_CB; i++)
   {
-    if ((ISP_SVC_StatEngine.client[i].callback == NULL) || (ISP_SVC_StatEngine.client[i].callback  == callback))
+    if ((ISP_SVC_StatEngine.client[i].callback == NULL) || (ISP_SVC_StatEngine.client[i].callback == callback))
       break;
   }
 
@@ -2167,7 +2167,7 @@ int32_t ISP_SVC_Misc_GetEstimatedLux(ISP_HandleTypeDef *hIsp)
       (IQParamConfig->luxRef.HL_Lum1 == 0) ||
       (IQParamConfig->luxRef.LL_Lum1 == 0))
   {
-	/* Uncalibrated lux reference points */
+    /* Uncalibrated lux reference points */
     return -1;
   }
 
@@ -2183,7 +2183,7 @@ int32_t ISP_SVC_Misc_GetEstimatedLux(ISP_HandleTypeDef *hIsp)
         (double)IQParamConfig->luxRef.HL_Expo2 / IQParamConfig->luxRef.HL_Lum2)) /
       ((double)IQParamConfig->luxRef.HL_Expo1 - IQParamConfig->luxRef.HL_Expo2);
 
-  b = (IQParamConfig->luxRef.HL_LuxRef  * (double)IQParamConfig->luxRef.HL_Expo1 / IQParamConfig->luxRef.HL_Lum1) -
+  b = (IQParamConfig->luxRef.HL_LuxRef * (double)IQParamConfig->luxRef.HL_Expo1 / IQParamConfig->luxRef.HL_Lum1) -
       (a * IQParamConfig->luxRef.HL_Expo1);
 
   globalExposure = exposureConfig.exposure * pow(10, (double)gainConfig.gain / 20000);
@@ -2197,13 +2197,13 @@ int32_t ISP_SVC_Misc_GetEstimatedLux(ISP_HandleTypeDef *hIsp)
 
   if (lux <= IQParamConfig->luxRef.HL_LuxRef * 0.9)
   {
-	/* Calculate a and b with the low lux references to improve precision when lux is under 90% of the HL_LuxRef */
+    /* Calculate a and b with the low lux references to improve precision when lux is under 90% of the HL_LuxRef */
     a = (IQParamConfig->luxRef.LL_LuxRef *
          ((double)IQParamConfig->luxRef.LL_Expo1 / IQParamConfig->luxRef.LL_Lum1 -
           (double)IQParamConfig->luxRef.LL_Expo2 / IQParamConfig->luxRef.LL_Lum2)) /
         ((double)IQParamConfig->luxRef.LL_Expo1 - IQParamConfig->luxRef.LL_Expo2);
 
-    b = (IQParamConfig->luxRef.LL_LuxRef  * (double)IQParamConfig->luxRef.LL_Expo1 / IQParamConfig->luxRef.LL_Lum1) -
+    b = (IQParamConfig->luxRef.LL_LuxRef * (double)IQParamConfig->luxRef.LL_Expo1 / IQParamConfig->luxRef.LL_Lum1) -
         (a * IQParamConfig->luxRef.LL_Expo1);
 
     lux = (int32_t)(IQParamConfig->luxRef.calibFactor * (a * globalExposure + b) * stats.down.averageL / globalExposure);

@@ -897,7 +897,7 @@ static ISP_StatusTypeDef ISP_CmdParser_GetConfig(ISP_HandleTypeDef *hIsp, uint8_
     ISP_ToolCom_SendData((uint8_t*)&c, sizeof(c), NULL, NULL);
   }
 
-  /* Send dump buffer if requested  */
+  /* Send dump buffer if requested */
   if (((cmd_id == ISP_CMD_DUMP_PREVIEW_FRAME) || (cmd_id == ISP_CMD_DUMP_ISP_FRAME) || (cmd_id == ISP_CMD_DUMP_RAW_FRAME)) && (ret == ISP_OK))
   {
     ISP_CmdParser_SendDumpData((uint8_t*)pFrame, c.dumpFrameMeta.data.size);
@@ -990,7 +990,7 @@ static ISP_StatusTypeDef ISP_CmdParser_StatDownCb(ISP_AlgoTypeDef *pAlgo)
   /* Send the answer command */
   cmd.base.header.id = ISP_CMD_STATISTICDOWN;
   cmd.base.header.operation = ISP_CMD_OP_GET_OK;
-  cmd.statisticsUp.data = ISP_CmdParser_stats.down;
+  cmd.statisticsDown.data = ISP_CmdParser_stats.down;
 
   ISP_ToolCom_SendData((uint8_t*)&cmd, sizeof(cmd), NULL, NULL);
 

@@ -54,7 +54,7 @@ void ISP_ToolCom_Init(void)
 
 /**
   * @brief  ISP_ToolCom_ReceivedCb
-  *         Callback received when data are received
+  *         Callback called when data are received
   * @param  buffer: Pointer to buffer payload
   * @param  buffer_size: Size of buffer payload
   * @retval None
@@ -96,22 +96,23 @@ void ISP_ToolCom_ReceivedCb(uint8_t *buffer, uint32_t buffer_size)
   *         Send a packet (message or/and payload)
   * @param  buffer: Pointer to buffer payload
   * @param  buffer_size: Size of buffer payload
-  * @param  message: Pointer to message string
+  * @param  dump_start_msg: Pointer to message string
+  * @param  dump_stop_msg: Pointer to message string
   * @retval None
   */
-void ISP_ToolCom_SendData(uint8_t *buffer, uint32_t buffer_size, char *dump_start_msg,  char *dump_stop_msg)
+void ISP_ToolCom_SendData(uint8_t *buffer, uint32_t buffer_size, char *dump_start_msg, char *dump_stop_msg)
 {
   if (dump_start_msg)
   {
-	USB_CDC_Send_Wrapper_Function((uint8_t*) dump_start_msg, strlen((char*)dump_start_msg));
+    USB_CDC_Send_Wrapper_Function((uint8_t*) dump_start_msg, strlen((char*)dump_start_msg));
   }
   if (buffer)
   {
-	USB_CDC_Send_Wrapper_Function(buffer, buffer_size);
+    USB_CDC_Send_Wrapper_Function(buffer, buffer_size);
   }
   if (dump_stop_msg)
   {
-	USB_CDC_Send_Wrapper_Function((uint8_t*) dump_stop_msg, strlen((char*)dump_stop_msg));
+    USB_CDC_Send_Wrapper_Function((uint8_t*) dump_stop_msg, strlen((char*)dump_stop_msg));
   }
 }
 

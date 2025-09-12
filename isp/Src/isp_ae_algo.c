@@ -65,8 +65,8 @@ void isp_ae_init(ISP_HandleTypeDef *hIsp)
   pSensorInfo = &hIsp->sensorInfo;
 }
 
-static void isp_ae__get_gain_expo_multiple(uint32_t gain, uint32_t exposure,
-                                           uint32_t *equiv_gain, uint32_t *equiv_exposure)
+static void isp_ae_get_gain_expo_multiple(uint32_t gain, uint32_t exposure,
+                                          uint32_t *equiv_gain, uint32_t *equiv_exposure)
 {
   /* Get equivalent gain/exposure where exposure is a multiple of the flickering period */
   float compensation_gain;
@@ -102,7 +102,7 @@ static void isp_ae__get_gain_expo_multiple(uint32_t gain, uint32_t exposure,
     /* Keep the initial values in case:
        - We cannot update the exposure because the values are under the flickering period (will flicker)
        - Or we are close to the upper multiple value (the acceptance criteria is set to 95% of the
-         mutliple value to ensure no flickering effect will be visible) */
+         multiple value to ensure no flickering effect will be visible) */
     *equiv_gain = gain;
     *equiv_exposure = exposure;
   }
@@ -241,7 +241,7 @@ void isp_ae_get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposur
 
       if (cur_global_exposure != 0 && averageL != 0)
       {
-        /* Compare exposure ratio and luminance ratio, to check the consistency of the results  */
+        /* Compare exposure ratio and luminance ratio, to check the consistency of the results */
         if ((((new_global_exposure / cur_global_exposure) < 1.10) && (((double)IQParamConfig->AECAlgo.exposureTarget / averageL) > 1.40)) || /* new global exposure is very close to previous exposure while luminance is at least 40% higher */
             (((new_global_exposure / cur_global_exposure) < 1.50) && (((double)IQParamConfig->AECAlgo.exposureTarget / averageL) > 1.80)) || /* new global exposure is less than 50% higher while luminance is more than 80% higher */
             (((new_global_exposure / cur_global_exposure) > 1.65) && (((double)IQParamConfig->AECAlgo.exposureTarget / averageL) < 1.30)) || /* new global exposure is very high while luminance is less than 30% higher */
@@ -284,7 +284,7 @@ void isp_ae_get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposur
 
       if (cur_global_exposure != 0 && averageL != 0)
       {
-          /* Compare exposure ratio and luminance ratio, to check the consistency of the results  */
+          /* Compare exposure ratio and luminance ratio, to check the consistency of the results */
         if ((((new_global_exposure / cur_global_exposure) > 0.60) && (((double)IQParamConfig->AECAlgo.exposureTarget / averageL) < 0.40)) || /* new global exposure is at least 60% of the current exposure while luminance is less than 40% of the target */
             (((new_global_exposure / cur_global_exposure) < 0.45) && (((double)IQParamConfig->AECAlgo.exposureTarget / averageL) > 0.65)) || /* new global exposure is less than 45% of the current exposure while luminance is more than 65% of the target */
             (((new_global_exposure / cur_global_exposure) < 0.15) && (((double)IQParamConfig->AECAlgo.exposureTarget / averageL) > 0.50)) || /* new global exposure is very low while luminance is more than 50% of the target */
@@ -372,7 +372,7 @@ void isp_ae_get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposur
   }
 
   /* Consider flickering period constraint */
-  isp_ae__get_gain_expo_multiple(*pGain, *pExposure, &curGain, &curExposure);
+  isp_ae_get_gain_expo_multiple(*pGain, *pExposure, &curGain, &curExposure);
   *pExposure = curExposure;
   *pGain = curGain;
 

@@ -2,7 +2,7 @@
  ******************************************************************************
  * @file    isp_ae_algo.h
  * @author  AIS Application Team
- * @brief   Header file of ISP AWB algorithm
+ * @brief   Header file of ISP AE algorithm
  ******************************************************************************
  * @attention
  *
