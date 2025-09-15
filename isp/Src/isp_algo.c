@@ -124,7 +124,6 @@ ISP_AlgoTypeDef *ISP_Algo_List[] = {
 };
 
 /* Global variables ----------------------------------------------------------*/
-uint32_t current_awb_profId = 0;
 ISP_MetaTypeDef Meta = {0};
 
 /* Private functions ---------------------------------------------------------*/

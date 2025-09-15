@@ -66,6 +66,7 @@ typedef enum {
   ISP_CMD_FIRMWARECONFIG       = 0x1C,
   ISP_CMD_UNIQUE_GAMMA         = 0x1D,
   ISP_CMD_LUXREF               = 0x1E,
+  ISP_CMD_AWBCOLORTEMP         = 0x1F,
   /* Application API commands */
   ISP_CMD_USER_EXPOSURETARGET  = 0x80,
   ISP_CMD_USER_LISTWBREFMODES  = 0x81,
@@ -166,6 +167,12 @@ typedef struct
   ISP_CMD_HeaderTypeDef header;
   ISP_AWBProfileTypeDef data;
 } ISP_CMD_AWBProfileTypeDef;
+
+typedef struct
+{
+  ISP_CMD_HeaderTypeDef header;
+  uint32_t colortemp;
+} ISP_CMD_AWBColorTempTypeDef;
 
 typedef struct
 {
@@ -309,6 +316,7 @@ typedef union {
   ISP_CMD_LuxTypeDef               lux;
   ISP_CMD_AWBAlgoTypeDef           AWBAlgo;
   ISP_CMD_AWBProfileTypeDef        AWBProfile;
+  ISP_CMD_AWBColorTempTypeDef      AWBColorTemp;
   ISP_CMD_ISPGainStaticTypeDef     ISPGainStatic;
   ISP_CMD_ColorConvStaticTypeDef   colorConvStatic;
   ISP_CMD_StatisticsUpTypeDef      statisticsUp;
@@ -342,7 +350,6 @@ static ISP_StatusTypeDef ISP_CmdParser_StatDownCb(ISP_AlgoTypeDef *pAlgo);
 /* Private variables ---------------------------------------------------------*/
 static ISP_SVC_StatStateTypeDef ISP_CmdParser_stats;
 
-extern uint32_t current_awb_profId;
 extern ISP_MetaTypeDef Meta;
 
 /**
@@ -763,11 +770,21 @@ static ISP_StatusTypeDef ISP_CmdParser_GetConfig(ISP_HandleTypeDef *hIsp, uint8_
     break;
 
   case ISP_CMD_AWBPROFILE:
-    //TODO: this command is no more applicable since AWB interpolates between profiles
-    //TODO: instead of it we may want to add an ISP_CMD_AWBCOLORTEMP command
-    //TODO: for the time being this command always returns the first profile (current_awb_profId=0)
-    strcpy(c.AWBProfile.data.label, IQParamConfig->AWBAlgo.label[current_awb_profId]);
-    c.AWBProfile.data.referenceColorTemp = IQParamConfig->AWBAlgo.referenceColorTemp[current_awb_profId];
+    /* This command is deprecated since AWB interpolates between profiles */
+    strcpy(c.AWBProfile.data.label, "");
+    c.AWBProfile.data.referenceColorTemp = 0;
+    break;
+
+  case ISP_CMD_AWBCOLORTEMP:
+    if (IQParamConfig->AWBAlgo.enable)
+    {
+      c.AWBColorTemp.colortemp = Meta.colorTemp;
+    }
+    else
+    {
+      /* null value indicates that there is no possible estimation when AWB algorithm is not running */
+      c.AWBColorTemp.colortemp = 0;
+    }
     break;
 
   case ISP_CMD_ISPGAINSTATIC:
