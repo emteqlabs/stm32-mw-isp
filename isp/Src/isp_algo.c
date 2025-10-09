@@ -45,6 +45,11 @@ typedef enum
 
 /* Debug logs control */
 //#define ALGO_AEC_DBG_LOGS
+//#define ALGO_PERF_DBG_LOGS
+
+#ifdef ALGO_PERF_DBG_LOGS
+#define MEAS_ITERATION 30
+#endif
 
 /* Max acceptable sensor delay */
 #define ALGO_DELAY_MAX               10
@@ -369,6 +374,12 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
     break;
 
   case ISP_ALGO_STATE_STAT_READY:
+#ifdef ALGO_PERF_DBG_LOGS
+    static float sum_calc, sum_process = 0;
+    static uint32_t iter = 0;
+    uint32_t end_algo_calc, end_algo_process = 20;
+    uint32_t start_algo = DWT->CYCCNT;
+#endif
     avgL = stats.down.averageL;
 #ifdef ALGO_AEC_DBG_LOGS
     if (avgL != currentL)
@@ -399,6 +410,9 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
     if (estimated_lux >= 0)
     {
       isp_ae_get_new_exposure((uint32_t)estimated_lux, avgL, &newExposure, &newGain, exposureConfig.exposure, gainConfig.gain);
+#ifdef ALGO_PERF_DBG_LOGS
+      end_algo_calc = DWT->CYCCNT;
+#endif
       if (gainConfig.gain != newGain)
       {
         /* Set new gain */
@@ -445,6 +459,21 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
       ret = ISP_ERR_ALGO;
       printf("ERROR: Lux value of the scene cannot be estimated\r\n");
     }
+
+#ifdef ALGO_PERF_DBG_LOGS
+    end_algo_process = DWT->CYCCNT;
+    sum_calc += (float)(end_algo_calc - start_algo) / (SystemCoreClock / 1e6);
+    sum_process += (float)(end_algo_process - start_algo) / (SystemCoreClock / 1e6);
+    iter++;
+
+    if (iter == MEAS_ITERATION)
+    {
+      printf("AEC time  = %.3f us (calc in %.3f us)\r\n", sum_process / MEAS_ITERATION, sum_calc / MEAS_ITERATION);
+      sum_process = 0;
+      sum_calc = 0;
+      iter = 0;
+    }
+#endif
 
     /* Ask for stats */
     ret = ISP_SVC_Stats_GetNext(hIsp, &ISP_Algo_AEC_StatCb, pAlgo, &stats, ISP_STAT_LOC_DOWN,
@@ -670,10 +699,19 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
     break;
 
   case ISP_ALGO_STATE_STAT_READY:
+#ifdef ALGO_PERF_DBG_LOGS
+    static float sum_calc, sum_process = 0;
+    static uint32_t iter = 0;
+    uint32_t end_algo_calc, end_algo_process = 20;
+    uint32_t start_algo = DWT->CYCCNT;
+#endif
     /* Optimization: do not ask for Up stats, but evaluate them from the down stats */
     ISP_SVC_Stats_EvaluateUp(hIsp, &stats.down, &stats.up);
 
     ret = ISP_AWB_GetConfig(&stats.up, &ColorConvConfig, &ISPGainConfig, &estimatedColorTemp);
+#ifdef ALGO_PERF_DBG_LOGS
+      end_algo_calc = DWT->CYCCNT;
+#endif
     if (ret == ISP_OK)
     {
       if (estimatedColorTemp != currentColorTemp || reconfigureRequest == true)
@@ -708,6 +746,21 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
 
     /* Reset reconfigureRequest */
     reconfigureRequest = false;
+
+#ifdef ALGO_PERF_DBG_LOGS
+    end_algo_process = DWT->CYCCNT;
+    sum_calc += (float)(end_algo_calc - start_algo) / (SystemCoreClock / 1e6);
+    sum_process += (float)(end_algo_process - start_algo) / (SystemCoreClock / 1e6);
+    iter++;
+
+    if (iter == MEAS_ITERATION)
+    {
+      printf("AWB time  = %.3f us (calc in %.3f us)\r\n", sum_process / MEAS_ITERATION, sum_calc / MEAS_ITERATION);
+      sum_process = 0;
+      sum_calc = 0;
+      iter = 0;
+    }
+#endif
 
     /* Ask for stats */
     ret_stat = ISP_SVC_Stats_GetNext(hIsp, &ISP_Algo_AWB_StatCb, pAlgo, &stats, ISP_STAT_LOC_DOWN,
@@ -1005,6 +1058,12 @@ ISP_StatusTypeDef ISP_Algo_Init(ISP_HandleTypeDef *hIsp)
       }
     }
   }
+
+#ifdef ALGO_PERF_DBG_LOGS
+  CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+  DWT->CYCCNT = 0;
+  DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+#endif
 
   return ISP_OK;
 }
