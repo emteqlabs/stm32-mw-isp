@@ -63,6 +63,8 @@ typedef struct {
   ISP_SVC_StatType upRequest;           /* Type of statistics request at Up location */
   ISP_SVC_StatType downRequest;         /* Type of statistics request at Down location */
   uint32_t requestAllCounter;           /* Counter for the temporary "request all stats" mode */
+  ISP_StatAreaTypeDef upStatArea;       /* Stat area configured at upRequest */
+  ISP_StatAreaTypeDef downStatArea;     /* Stat area configured at downRequest */
 } ISP_SVC_StatEngineTypeDef;
 
 /* Private constants ---------------------------------------------------------*/
@@ -193,12 +195,12 @@ static int32_t From_CConv_Reg(int16_t Reg)
   return (int32_t) Val;
 }
 
-static uint8_t GetAvgStats(ISP_HandleTypeDef *hIsp, ISP_SVC_StatLocation location, ISP_SVC_Component component, uint32_t accu)
+static uint8_t GetAvgStats(ISP_StatAreaTypeDef *pStatArea, ISP_SVC_StatLocation location, ISP_SVC_Component component, uint32_t accu)
 {
   uint32_t nb_comp_pix, comp_divider;
 
   /* Number of pixels computed from Stat Area and considering decimation */
-  nb_comp_pix = hIsp->statArea.XSize * hIsp->statArea.YSize;
+  nb_comp_pix = pStatArea->XSize * pStatArea->YSize;
   nb_comp_pix /= ISP_DecimationValue.factor * ISP_DecimationValue.factor;
 
   if (location == ISP_STAT_LOC_DOWN)
@@ -1760,9 +1762,9 @@ void ISP_SVC_Stats_Gather(ISP_HandleTypeDef *hIsp)
     HAL_DCMIPP_PIPE_GetISPAccumulatedStatisticsCounter(hIsp->hDcmipp, DCMIPP_PIPE1, DCMIPP_STATEXT_MODULE2, &avgG);
     HAL_DCMIPP_PIPE_GetISPAccumulatedStatisticsCounter(hIsp->hDcmipp, DCMIPP_PIPE1, DCMIPP_STATEXT_MODULE3, &avgB);
 
-    ongoing->up.averageR = GetAvgStats(hIsp, ISP_STAT_LOC_UP, ISP_RED, avgR);
-    ongoing->up.averageG = GetAvgStats(hIsp, ISP_STAT_LOC_UP, ISP_GREEN, avgG);
-    ongoing->up.averageB = GetAvgStats(hIsp, ISP_STAT_LOC_UP, ISP_BLUE, avgB);
+    ongoing->up.averageR = GetAvgStats(&ISP_SVC_StatEngine.upStatArea, ISP_STAT_LOC_UP, ISP_RED, avgR);
+    ongoing->up.averageG = GetAvgStats(&ISP_SVC_StatEngine.upStatArea, ISP_STAT_LOC_UP, ISP_GREEN, avgG);
+    ongoing->up.averageB = GetAvgStats(&ISP_SVC_StatEngine.upStatArea, ISP_STAT_LOC_UP, ISP_BLUE, avgB);
     ongoing->up.averageL = LuminanceFromRGB(ongoing->up.averageR, ongoing->up.averageG, ongoing->up.averageB);
     break;
 
@@ -1787,9 +1789,9 @@ void ISP_SVC_Stats_Gather(ISP_HandleTypeDef *hIsp)
     HAL_DCMIPP_PIPE_GetISPAccumulatedStatisticsCounter(hIsp->hDcmipp, DCMIPP_PIPE1, DCMIPP_STATEXT_MODULE2, &avgG);
     HAL_DCMIPP_PIPE_GetISPAccumulatedStatisticsCounter(hIsp->hDcmipp, DCMIPP_PIPE1, DCMIPP_STATEXT_MODULE3, &avgB);
 
-    ongoing->down.averageR = GetAvgStats(hIsp, ISP_STAT_LOC_DOWN, ISP_RED, avgR);
-    ongoing->down.averageG = GetAvgStats(hIsp, ISP_STAT_LOC_DOWN, ISP_GREEN, avgG);
-    ongoing->down.averageB = GetAvgStats(hIsp, ISP_STAT_LOC_DOWN, ISP_BLUE, avgB);
+    ongoing->down.averageR = GetAvgStats(&ISP_SVC_StatEngine.downStatArea, ISP_STAT_LOC_DOWN, ISP_RED, avgR);
+    ongoing->down.averageG = GetAvgStats(&ISP_SVC_StatEngine.downStatArea, ISP_STAT_LOC_DOWN, ISP_GREEN, avgG);
+    ongoing->down.averageB = GetAvgStats(&ISP_SVC_StatEngine.downStatArea, ISP_STAT_LOC_DOWN, ISP_BLUE, avgB);
     IQParamConfig = ISP_SVC_IQParam_Get(hIsp);
     if ((hIsp->sensorInfo.bayer_pattern == ISP_DEMOS_TYPE_MONO) || (!IQParamConfig->demosaicing.enable))
     {
@@ -1836,6 +1838,12 @@ void ISP_SVC_Stats_Gather(ISP_HandleTypeDef *hIsp)
       statConf[i].Source = avgRGBUp[i];
       statConf[i].Bins = DCMIPP_STAT_EXT_AVER_MODE_ALL_PIXELS;
     }
+
+    if (ISP_SVC_ISP_GetStatArea(hIsp, &ISP_SVC_StatEngine.upStatArea) != ISP_OK)
+    {
+      printf("ERROR: can't get UP Stat Area\r\n");
+      return;
+    }
     break;
 
   case ISP_STAT_CFG_UP_BINS_0_2:
@@ -1860,6 +1868,12 @@ void ISP_SVC_Stats_Gather(ISP_HandleTypeDef *hIsp)
       statConf[i].Mode = DCMIPP_STAT_EXT_MODE_AVERAGE;
       statConf[i].Source = avgRGBDown[i];
       statConf[i].Bins = DCMIPP_STAT_EXT_AVER_MODE_ALL_PIXELS;
+    }
+
+    if (ISP_SVC_ISP_GetStatArea(hIsp, &ISP_SVC_StatEngine.downStatArea) != ISP_OK)
+    {
+      printf("ERROR: can't get DOWN Stat Area\r\n");
+      return;
     }
     break;
 
