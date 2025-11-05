@@ -747,6 +747,8 @@ ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo)
   switch(algo->state)
   {
   case ISP_ALGO_STATE_INIT:
+    reconfigureRequest = true;
+    skip_stat_check_count = ALGO_AWB_STAT_CHECK_SKIP_AFTER_CT_ESTIMATION;
     profNb = 0;
 
     /* Reset color temperature history */
