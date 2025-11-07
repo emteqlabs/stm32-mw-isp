@@ -1340,8 +1340,12 @@ ISP_StatusTypeDef ISP_SVC_Misc_GetFirmwareConfig(ISP_FirmwareConfigTypeDef *pCon
   pConfig->uId[2] = HAL_GetUIDw2();
   /* Sensor Delay support status */
   pConfig->hasSensorDelay = 1;
-  /* UVC streaming support (not yet) */
+  /* UVC streaming support */
+#ifdef ISP_ENABLE_UVC
+  pConfig->hasUVC = 1;
+#else
   pConfig->hasUVC = 0;
+#endif
   /* ST 2A algorithms support */
   pConfig->hasSTAlgo = 1;
   return ISP_OK;

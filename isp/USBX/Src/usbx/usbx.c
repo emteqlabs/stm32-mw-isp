@@ -40,6 +40,202 @@ extern PCD_HandleTypeDef usbx_pcd_handle;
 /* Use read global buffer instead of local (memory issue) */
 unsigned char rx_buffer[RX_PACKET_SIZE];
 
+static int is_hs()
+{
+  assert(_ux_system_slave);
+
+  return _ux_system_slave->ux_system_slave_speed == UX_HIGH_SPEED_DEVICE;
+}
+
+static uvc_ctx_t *UVC_usbx_get_ctx_from_video_instance(UX_DEVICE_CLASS_VIDEO *video_instance)
+{
+  /* Should use ux_device_class_video_ioctl + UX_DEVICE_CLASS_VIDEO_IOCTL_GET_ARG. But direct access is faster */
+
+  return video_instance->ux_device_class_video_callbacks.ux_device_class_video_arg;
+}
+
+static uvc_ctx_t *UVC_usbx_get_ctx_from_stream(struct UX_DEVICE_CLASS_VIDEO_STREAM_STRUCT *stream)
+{
+  return UVC_usbx_get_ctx_from_video_instance(stream->ux_device_class_video_stream_video);
+}
+
+static void UVC_SendPacket(uvc_ctx_t *p_ctx, UX_DEVICE_CLASS_VIDEO_STREAM *stream, int len)
+{
+  ULONG buffer_length;
+  UCHAR *buffer;
+  int ret;
+
+  ret = ux_device_class_video_write_payload_get(stream, &buffer, &buffer_length);
+  assert(ret == UX_SUCCESS);
+  assert(buffer_length >= len);
+
+  memcpy(buffer, p_ctx->packet, len);
+  ret = ux_device_class_video_write_payload_commit(stream, len);
+  assert(ret == UX_SUCCESS);
+}
+
+static void UVC_DataIn(struct UX_DEVICE_CLASS_VIDEO_STREAM_STRUCT *stream)
+{
+  int packet_size = is_hs() ? UVC_ISO_HS_MPS : UVC_ISO_FS_MPS;
+  uvc_ctx_t *p_ctx = UVC_usbx_get_ctx_from_stream(stream);
+  uvc_on_fly_ctx *on_fly_ctx;
+  int len;
+
+  if (p_ctx->state != UVC_STATUS_STREAMING)
+  {
+    return ;
+  }
+
+  /* select new frame */
+  if (!p_ctx->on_fly_ctx)
+    p_ctx->on_fly_ctx = UVC_StartNewFrameTransmission(p_ctx, packet_size);
+
+  if (!p_ctx->on_fly_ctx) {
+    UVC_SendPacket(p_ctx, stream, 2);
+    return ;
+  }
+
+  /* Send next frame packet */
+  on_fly_ctx = p_ctx->on_fly_ctx;
+  len = on_fly_ctx->packet_index == (on_fly_ctx->packet_nb - 1) ? on_fly_ctx->last_packet_size + 2 : packet_size;
+  memcpy(&p_ctx->packet[2], on_fly_ctx->cursor, len - 2);
+  UVC_SendPacket(p_ctx, stream, len);
+
+  UVC_UpdateOnFlyCtx(p_ctx, len);
+}
+
+static void UVC_StopStreaming(struct UX_DEVICE_CLASS_VIDEO_STREAM_STRUCT *stream)
+{
+  uvc_ctx_t *p_ctx = UVC_usbx_get_ctx_from_stream(stream);
+
+  p_ctx->state = UVC_STATUS_STOP;
+  if (p_ctx->on_fly_ctx)
+    UVC_AbortOnFlyCtx(p_ctx);
+
+  p_ctx->p_frame = NULL;
+  p_ctx->frame_size = 0;
+  p_ctx->is_starting = 0;
+}
+
+static void UVC_StartStreaming(struct UX_DEVICE_CLASS_VIDEO_STREAM_STRUCT *stream)
+{
+    uvc_ctx_t *p_ctx = UVC_usbx_get_ctx_from_stream(stream);
+    int i;
+
+    if (!p_ctx)
+        return;
+
+    // Initialize packet header (UVC payload header)
+    if (p_ctx->packet) {
+        p_ctx->packet[0] = 2; // Example: header length or flags
+        p_ctx->packet[1] = 0; // Example: frame ID or flags
+    }
+
+    // Initialize timing and state
+    p_ctx->frame_start = HAL_GetTick() - p_ctx->frame_period_in_ms;
+    p_ctx->is_starting = 1;
+    p_ctx->state = UVC_STATUS_STREAMING;
+
+    // Start data-in process for each buffer
+    for (i = 0; i < p_ctx->buffer_nb; i++)
+        UVC_DataIn(stream);
+}
+
+static void UVC_stream_change(struct UX_DEVICE_CLASS_VIDEO_STREAM_STRUCT *stream, ULONG alternate_setting)
+{
+  int ret;
+
+  if (alternate_setting == 0) {
+    UVC_StopStreaming(stream);
+    return ;
+  }
+
+  UVC_StartStreaming(stream);
+
+  ret = ux_device_class_video_transmission_start(stream);
+  assert(ret == UX_SUCCESS);
+}
+
+static int UVC_usbd_stop_streaming(void *ctx)
+{
+  /* we should never reach this function */
+  assert(0);
+
+  return -1;
+}
+
+static int UVC_usbd_start_streaming(void *ctx)
+{
+  /* we should never reach this function */
+  assert(0);
+
+  return -1;
+}
+
+static int UVC_usbx_send_data(void *ctx, uint8_t *data, int length)
+{
+  UX_SLAVE_TRANSFER *transfer = ctx;
+  uint8_t *buffer = transfer->ux_slave_transfer_request_data_pointer;
+  int ret;
+
+  memcpy(buffer, data, length);
+  ret = ux_device_stack_transfer_request(transfer, length, length);
+
+  return ret;
+}
+
+static int UVC_usbx_receive_data(void *ctx, uint8_t *data, int length)
+{
+  UX_SLAVE_TRANSFER *transfer = ctx;
+
+  if (transfer->ux_slave_transfer_request_actual_length != length)
+    return UX_ERROR;
+
+  memcpy(data, transfer->ux_slave_transfer_request_data_pointer, length);
+
+  return UX_SUCCESS;
+}
+
+static UINT UVC_stream_request(struct UX_DEVICE_CLASS_VIDEO_STREAM_STRUCT *stream, UX_SLAVE_TRANSFER *transfer)
+{
+  uvc_ctx_t *p_ctx = UVC_usbx_get_ctx_from_stream(stream);
+  uvc_setup_req_t req;
+  int ret;
+
+  req.bmRequestType = transfer->ux_slave_transfer_request_setup[UX_SETUP_REQUEST_TYPE];
+  req.bRequest = transfer->ux_slave_transfer_request_setup[UX_SETUP_REQUEST];
+  req.wValue = ux_utility_short_get(transfer->ux_slave_transfer_request_setup + UX_SETUP_VALUE);
+  req.wIndex = ux_utility_short_get(transfer->ux_slave_transfer_request_setup + UX_SETUP_INDEX);
+  req.wLength = ux_utility_short_get(transfer->ux_slave_transfer_request_setup + UX_SETUP_LENGTH);
+  req.dwMaxPayloadTransferSize = is_hs() ? UVC_ISO_HS_MPS : UVC_ISO_FS_MPS;
+  req.ctx = transfer;
+  req.stop_streaming = UVC_usbd_stop_streaming;
+  req.start_streaming = UVC_usbd_start_streaming;
+  req.send_data = UVC_usbx_send_data;
+  req.receive_data = UVC_usbx_receive_data;
+
+  ret = UVC_handle_setup_request(p_ctx, &req);
+
+  return ret ? UX_ERROR : UX_SUCCESS;
+}
+
+static VOID UVC_stream_payload_done(struct UX_DEVICE_CLASS_VIDEO_STREAM_STRUCT *stream, ULONG length)
+{
+  UVC_DataIn(stream);
+}
+
+static VOID UVC_instance_activate(VOID *video_instance)
+{
+  uvc_ctx_t *p_ctx = UVC_usbx_get_ctx_from_video_instance(video_instance);
+
+  p_ctx->state = UVC_STATUS_STOP;
+}
+
+static VOID UVC_instance_deactivate(VOID *video_instance)
+{
+  ;
+}
+
 static UINT usbx_device_cb(ULONG cb_evt)
 {
   //printf("%s evt %d\n", __func__, (int) cb_evt);
@@ -153,7 +349,6 @@ uint32_t usbx_read(uint8_t* payload)
   ULONG rx_len = 0;
   int ret;
 
-
   if (device->ux_slave_device_state != UX_DEVICE_CONFIGURED)
     return 0;
   if (!cdc_acm)
@@ -197,9 +392,8 @@ void usbx_write(unsigned char *msg, uint32_t len)
   assert(ret == UX_STATE_NEXT); // UX_STATE_NEXT state is the success state
 }
 
-int usbx_init(PCD_HandleTypeDef *pcd_handle, PCD_TypeDef *pcd_instance)
+int usbx_init(uvc_ctx_t *p_ctx, PCD_HandleTypeDef *pcd_handle, PCD_TypeDef *pcd_instance, usb_desc_conf *conf_usb, uvc_desc_conf *conf_uvc)
 {
-  usb_desc_conf desc_conf = { 0 };
   uint8_t lang_string_desc[4];
   int usb_dev_strings_len;
   int usb_dev_langid_len;
@@ -216,23 +410,51 @@ int usbx_init(PCD_HandleTypeDef *pcd_handle, PCD_TypeDef *pcd_instance)
   if (ret)
     return ret;
 
+#ifdef ISP_ENABLE_UVC
+  uvc_desc_conf desc_conf_uvc = { 0 };
+  UX_DEVICE_CLASS_VIDEO_STREAM_PARAMETER vsp[1] = { 0 };
+  UX_DEVICE_CLASS_VIDEO_PARAMETER vp = { 0 };
+  desc_conf_uvc.width = conf_uvc->width;
+  desc_conf_uvc.height = conf_uvc->height;
+  desc_conf_uvc.fps = conf_uvc->fps;
+
   /* Build High Speed configuration descriptor */
-  desc_conf.is_hs = 1;
-  usb_desc_hs_len = usb_get_device_desc(usb_desc_hs, sizeof(usb_desc_hs), 1, 2, 3);
+  desc_conf_uvc.is_hs = 1;
+  usb_desc_hs_len = uvc_get_device_desc(usb_desc_hs, sizeof(usb_desc_hs), 1, 2, 3);
   assert(usb_desc_hs_len > 0);
 
-  len = usb_get_configuration_desc(&usb_desc_hs[usb_desc_hs_len], sizeof(usb_desc_hs) - usb_desc_hs_len, &desc_conf);
+  len = uvc_get_configuration_desc(&usb_desc_hs[usb_desc_hs_len], sizeof(usb_desc_hs) - usb_desc_hs_len, &desc_conf_uvc);
   assert(len > 0);
   usb_desc_hs_len += len;
 
   /* Build Full Speed configuration descriptor */
-  desc_conf.is_hs = 0;
+  desc_conf_uvc.is_hs = 0;
+  usb_desc_fs_len = uvc_get_device_desc(usb_desc_fs, sizeof(usb_desc_fs), 1, 2, 3);
+  assert(usb_desc_fs_len > 0);
+
+  len = uvc_get_configuration_desc(&usb_desc_fs[usb_desc_fs_len], sizeof(usb_desc_fs) - usb_desc_fs_len, &desc_conf_uvc);
+  assert(len > 0);
+  usb_desc_fs_len += len;
+#else
+  usb_desc_conf desc_conf_usb = { 0 };
+  /* Build High Speed configuration descriptor */
+  desc_conf_usb.is_hs = 1;
+  usb_desc_hs_len = usb_get_device_desc(usb_desc_hs, sizeof(usb_desc_hs), 1, 2, 3);
+  assert(usb_desc_hs_len > 0);
+
+  len = usb_get_configuration_desc(&usb_desc_hs[usb_desc_hs_len], sizeof(usb_desc_hs) - usb_desc_hs_len, &desc_conf_usb);
+  assert(len > 0);
+  usb_desc_hs_len += len;
+
+  /* Build Full Speed configuration descriptor */
+  desc_conf_usb.is_hs = 0;
   usb_desc_fs_len = usb_get_device_desc(usb_desc_fs, sizeof(usb_desc_fs), 1, 2, 3);
   assert(usb_desc_fs_len > 0);
 
-  len = usb_get_configuration_desc(&usb_desc_fs[usb_desc_fs_len], sizeof(usb_desc_fs) - usb_desc_fs_len, &desc_conf);
+  len = usb_get_configuration_desc(&usb_desc_fs[usb_desc_fs_len], sizeof(usb_desc_fs) - usb_desc_fs_len, &desc_conf_usb);
   assert(len > 0);
   usb_desc_fs_len += len;
+#endif /* ISP_ENABLE_UVC */
 
   len = usb_get_lang_string_desc(lang_string_desc, sizeof(lang_string_desc));
   assert(len == sizeof(lang_string_desc));
@@ -255,9 +477,36 @@ int usbx_init(PCD_HandleTypeDef *pcd_handle, PCD_TypeDef *pcd_instance)
   cdc_acm_parameter.ux_slave_class_cdc_acm_instance_deactivate = USBD_CDC_ACM_Deactivate;
   cdc_acm_parameter.ux_slave_class_cdc_acm_parameter_change    = USBD_CDC_ACM_ParameterChange;
 
+#ifdef ISP_ENABLE_UVC
+  #if defined(UX_DEVICE_STANDALONE)
+    vsp[0].ux_device_class_video_stream_parameter_task_function = ux_device_class_video_write_task_function;
+  #else
+    vsp[0].ux_device_class_video_stream_parameter_thread_stack_size = 0;
+    vsp[0].ux_device_class_video_stream_parameter_thread_entry = ux_device_class_video_write_thread_entry;
+  #endif
+    vsp[0].ux_device_class_video_stream_parameter_callbacks.ux_device_class_video_stream_change = UVC_stream_change;
+    vsp[0].ux_device_class_video_stream_parameter_callbacks.ux_device_class_video_stream_request = UVC_stream_request;
+    vsp[0].ux_device_class_video_stream_parameter_callbacks.ux_device_class_video_stream_payload_done = UVC_stream_payload_done;
+    vsp[0].ux_device_class_video_stream_parameter_max_payload_buffer_nb = USBX_BUFFER_NB;
+    vsp[0].ux_device_class_video_stream_parameter_max_payload_buffer_size = UVC_ISO_HS_MPS;
+    vp.ux_device_class_video_parameter_callbacks.ux_slave_class_video_instance_activate = UVC_instance_activate;
+    vp.ux_device_class_video_parameter_callbacks.ux_slave_class_video_instance_deactivate = UVC_instance_deactivate;
+    vp.ux_device_class_video_parameter_callbacks.ux_device_class_video_request = NULL;
+    vp.ux_device_class_video_parameter_callbacks.ux_device_class_video_arg = p_ctx;
+    vp.ux_device_class_video_parameter_streams_nb = 1;
+    vp.ux_device_class_video_parameter_streams = vsp;
+    /* Register first Video instance corresponding to Interface 0 */
+    ret = ux_device_stack_class_register(_ux_system_device_class_video_name, ux_device_class_video_entry, 1, 0, &vp);
+    if (ret)
+      return ret;
+   /* Register first CDC instance corresponding to Interface 2 */
+  ret = ux_device_stack_class_register(_ux_system_slave_class_cdc_acm_name, ux_device_class_cdc_acm_entry, 1, 2, &cdc_acm_parameter);
+  assert(ret == 0);
+#else
   /* Register first CDC instance corresponding to Interface 0 */
   ret = ux_device_stack_class_register(_ux_system_slave_class_cdc_acm_name, ux_device_class_cdc_acm_entry, 1, 0, &cdc_acm_parameter);
   assert(ret == 0);
+#endif
 
   return ux_dcd_stm32_initialize((ULONG)pcd_instance, (ULONG)pcd_handle);
 }

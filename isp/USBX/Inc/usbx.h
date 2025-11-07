@@ -19,8 +19,9 @@
 #define _USBX_H_
 
 #include "usbx_conf.h"
+#include "usb_desc.h"
 
-int usbx_init(PCD_HandleTypeDef *pcd_handle, PCD_TypeDef *pcd_instance);
+int usbx_init(uvc_ctx_t *p_ctx, PCD_HandleTypeDef *pcd_handle, PCD_TypeDef *pcd_instance, usb_desc_conf *conf_usb, uvc_desc_conf *conf_uvc);
 uint32_t usbx_read(uint8_t* payload);
 void usbx_write(unsigned char *msg, uint32_t len);
 

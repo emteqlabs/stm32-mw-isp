@@ -22,6 +22,15 @@
 
 typedef struct {
   int is_hs;
+  int width;
+  int height;
+  int fps;
+  int payload_type;
+  uint32_t dwMaxVideoFrameSize;
+} uvc_desc_conf;
+
+typedef struct {
+  int is_hs;
 } usb_desc_conf;
 
 int usb_get_device_desc(void *p_dst, int dst_len, int idx_manufacturer, int idx_product, int idx_serial);
@@ -31,5 +40,6 @@ int usb_get_manufacturer_string_desc(void *p_dst, int dst_len);
 int usb_get_product_string_desc(void *p_dst, int dst_len);
 int usb_get_serial_string_desc(void *p_dst, int dst_len);
 int usb_get_configuration_desc(void *p_dst, int dst_len, usb_desc_conf *p_conf);
-
+int uvc_get_configuration_desc(void *p_dst, int dst_len, uvc_desc_conf *p_conf);
+int uvc_get_device_desc(void *p_dst, int dst_len, int idx_manufacturer, int idx_product, int idx_serial);
 #endif
