@@ -74,6 +74,8 @@ typedef enum {
   ISP_CMD_USER_GETDECIMATION   = 0x83,
   ISP_CMD_USER_STATISTICAREA   = 0x84,
   ISP_CMD_USER_LUX             = 0x85,
+  /* Frame data output command */
+  ISP_CMD_FRAMEDATA            = 0xFE,
   /* Metadata output command */
   ISP_CMD_METADATA_OUTPUT      = 0xFF,
 } ISP_CMD_ID_TypeDef;
@@ -299,6 +301,15 @@ typedef struct
   uint8_t enable;
 } ISP_CMD_MetadataOutputTypeDef;
 
+typedef struct
+{
+  ISP_CMD_HeaderTypeDef header;
+  uint32_t exposure;          /* Exposure time in us */
+  uint32_t gain;              /* Gain in mdB */
+  int32_t luxEstimation;
+  uint32_t colortemp;
+} ISP_CMD_FramedataTypeDef;
+
 typedef union {
   ISP_CMD_BaseTypeDef              base;
   ISP_CMD_StatRemovalTypeDef       statRemoval;
@@ -333,6 +344,7 @@ typedef union {
   ISP_CMD_SensorDelayMeasureTypeDef sensorDelayMeasure;
   ISP_CMD_FirmwareConfigTypeDef    firmwareConfig;
   ISP_CMD_MetadataOutputTypeDef    metadataOutput;
+  ISP_CMD_FramedataTypeDef         framedata;
 } ISP_CMD_TypeDef;
 
 /* Private constants ---------------------------------------------------------*/
@@ -667,7 +679,6 @@ static ISP_StatusTypeDef ISP_CmdParser_SetConfig(ISP_HandleTypeDef *hIsp, uint8_
     Meta.outputEnable = c.metadataOutput.enable;
     break;
 
-
   default:
     ret = ISP_ERR_CMDPARSER_COMMAND;
   }
@@ -887,6 +898,28 @@ static ISP_StatusTypeDef ISP_CmdParser_GetConfig(ISP_HandleTypeDef *hIsp, uint8_
 
   case ISP_CMD_METADATA_OUTPUT:
     c.metadataOutput.enable = Meta.outputEnable;
+    break;
+
+  case ISP_CMD_FRAMEDATA:
+    c.framedata.exposure = Meta.exposure;
+    c.framedata.gain = Meta.gain;
+    if (IQParamConfig->AECAlgo.enable){
+      c.framedata.luxEstimation = Meta.lux;
+    }
+    else
+    {
+      c.framedata.luxEstimation = ISP_SVC_Misc_GetEstimatedLux(hIsp);
+      /* This function returns -1 in case current settings do not allow to calculate the lux value */
+    }
+    if (IQParamConfig->AWBAlgo.enable)
+    {
+      c.framedata.colortemp = Meta.colorTemp;
+    }
+    else
+    {
+      /* null value indicates that there is no possible estimation when AWB algorithm is not running */
+      c.framedata.colortemp = 0;
+    }
     break;
 
   default:
