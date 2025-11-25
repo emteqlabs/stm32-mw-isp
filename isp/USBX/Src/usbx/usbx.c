@@ -40,6 +40,7 @@ extern PCD_HandleTypeDef usbx_pcd_handle;
 /* Use read global buffer instead of local (memory issue) */
 unsigned char rx_buffer[RX_PACKET_SIZE];
 
+#ifdef ISP_ENABLE_UVC
 static int is_hs()
 {
   assert(_ux_system_slave);
@@ -235,6 +236,7 @@ static VOID UVC_instance_deactivate(VOID *video_instance)
 {
   ;
 }
+#endif
 
 static UINT usbx_device_cb(ULONG cb_evt)
 {

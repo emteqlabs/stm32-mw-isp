@@ -309,7 +309,11 @@ static void build_std_iad_desc(struct std_iad_desc *desc, struct usb_desc_head *
   desc->head.next = next;
   desc->raw.bLength = sizeof(desc->raw);
   desc->raw.bDescriptorType = 0x0b;
+#ifdef ISP_ENABLE_UVC
   desc->raw.bFirstInterface = 2;
+#else
+  desc->raw.bFirstInterface = 0;
+#endif
   desc->raw.bInterfaceCount = 2;
   desc->raw.bFunctionClass = 0x02; /* Communications Interface Class */
   desc->raw.bFunctionSubClass = 0x02; /* Abstract Control Mode */
