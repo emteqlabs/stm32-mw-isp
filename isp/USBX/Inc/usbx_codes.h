@@ -151,6 +151,8 @@
 #define VS_CONTROL_UNDEFINED                           0x00U
 #define VS_PROBE_CONTROL                               0x100U
 #define VS_COMMIT_CONTROL                              0x200U
+#define VS_PROBE_CONTROL_CS                            0x01U
+#define VS_COMMIT_CONTROL_CS                           0x02U
 #define VS_STILL_PROBE_CONTROL                         0x03U
 #define VS_STILL_COMMIT_CONTROL                        0x04U
 #define VS_STILL_IMAGE_TRIGGER_CONTROL                 0x05U

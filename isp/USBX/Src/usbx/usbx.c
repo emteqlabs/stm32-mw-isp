@@ -238,8 +238,6 @@ static VOID UVC_instance_deactivate(VOID *video_instance)
 
 static UINT usbx_device_cb(ULONG cb_evt)
 {
-  //printf("%s evt %d\n", __func__, (int) cb_evt);
-
 #if defined(UX_DEVICE_STANDALONE)
   if (cb_evt == UX_DCD_STM32_SOF_RECEIVED) {
     ux_system_tasks_run();
@@ -358,8 +356,8 @@ uint32_t usbx_read(uint8_t* payload)
   if(ret==UX_STATE_NEXT && rx_len > 0){
     memcpy(payload, rx_buffer, rx_len);
     return rx_len;
-  } 
-  else 
+  }
+  else
   {
     return 0;
   }
@@ -392,7 +390,7 @@ void usbx_write(unsigned char *msg, uint32_t len)
   assert(ret == UX_STATE_NEXT); // UX_STATE_NEXT state is the success state
 }
 
-int usbx_init(uvc_ctx_t *p_ctx, PCD_HandleTypeDef *pcd_handle, PCD_TypeDef *pcd_instance, usb_desc_conf *conf_usb, uvc_desc_conf *conf_uvc)
+int usbx_init(PCD_HandleTypeDef *pcd_handle, PCD_TypeDef *pcd_instance, uvc_ctx_t *p_ctx)
 {
   uint8_t lang_string_desc[4];
   int usb_dev_strings_len;
@@ -414,9 +412,9 @@ int usbx_init(uvc_ctx_t *p_ctx, PCD_HandleTypeDef *pcd_handle, PCD_TypeDef *pcd_
   uvc_desc_conf desc_conf_uvc = { 0 };
   UX_DEVICE_CLASS_VIDEO_STREAM_PARAMETER vsp[1] = { 0 };
   UX_DEVICE_CLASS_VIDEO_PARAMETER vp = { 0 };
-  desc_conf_uvc.width = conf_uvc->width;
-  desc_conf_uvc.height = conf_uvc->height;
-  desc_conf_uvc.fps = conf_uvc->fps;
+  desc_conf_uvc.width = p_ctx->conf.width;
+  desc_conf_uvc.height = p_ctx->conf.height;
+  desc_conf_uvc.fps = p_ctx->conf.fps;
 
   /* Build High Speed configuration descriptor */
   desc_conf_uvc.is_hs = 1;
@@ -466,7 +464,7 @@ int usbx_init(uvc_ctx_t *p_ctx, PCD_HandleTypeDef *pcd_handle, PCD_TypeDef *pcd_
   assert(usb_dev_strings_len > 0);
 
   ret = ux_device_stack_initialize(usb_desc_hs, usb_desc_hs_len,
-		  	  	  	  	  	  	   usb_desc_fs, usb_desc_fs_len,
+                                   usb_desc_fs, usb_desc_fs_len,
                                    usb_dev_strings, usb_dev_strings_len,
                                    usb_dev_langid, usb_dev_langid_len, usbx_device_cb);
   if (ret)
