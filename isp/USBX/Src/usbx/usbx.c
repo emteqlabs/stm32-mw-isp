@@ -390,6 +390,11 @@ void usbx_write(unsigned char *msg, uint32_t len)
     ret = ux_device_class_cdc_acm_write_run(cdc_acm, msg, len, &len_send);
   }
   assert(ret == UX_STATE_NEXT); // UX_STATE_NEXT state is the success state
+
+  /* Dirty hack that allows to dump frame with windows environment
+   * It slows down the acknowledge before a new transmission
+   */
+  for (uint32_t i = 0 ; i < 100000 ; i++);
 }
 
 int usbx_init(PCD_HandleTypeDef *pcd_handle, PCD_TypeDef *pcd_instance, uvc_ctx_t *p_ctx)
