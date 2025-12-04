@@ -346,6 +346,7 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
   static uint32_t currentL;
 #endif
   int32_t estimated_lux;
+ ISP_HandleTypeDef *pIsp_handle = (ISP_HandleTypeDef *)hIsp;
 
   IQParamConfig = ISP_SVC_IQParam_Get(hIsp);
   if (IQParamConfig->AECAlgo.enable == false)
@@ -356,6 +357,12 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
   switch(algo->state)
   {
   case ISP_ALGO_STATE_INIT:
+    /* Update Sensor Info in case calculated exposure limits are changed*/
+    ret = ISP_SVC_Sensor_GetInfo(hIsp, &pIsp_handle->sensorInfo);
+    if (ret != ISP_OK)
+    {
+      return ret;
+    }
   case ISP_ALGO_STATE_NEED_STAT:
     /* Ask for stats */
     ret = ISP_SVC_Stats_GetNext(hIsp, &ISP_Algo_AEC_StatCb, pAlgo, &stats, ISP_STAT_LOC_DOWN,
