@@ -23,6 +23,7 @@
 #include "isp_cmd_parser.h"
 #include "isp_tool_com.h"
 #include "isp_services.h"
+#include "usbx.h"
 
 /* Private types -------------------------------------------------------------*/
 typedef enum {
@@ -970,6 +971,8 @@ static void ISP_CmdParser_SendDumpData(uint8_t* pFrame, uint32_t size)
   char dump_start_msg[32];
   char dump_stop_msg[32];
 
+  usbx_warn_dump_status(true);
+
   if (size > ISP_MAX_DUMP_SIZE) {
     /* Split the data in several parts */
     do {
@@ -1003,6 +1006,7 @@ static void ISP_CmdParser_SendDumpData(uint8_t* pFrame, uint32_t size)
     sprintf(dump_stop_msg, "%s]", ISP_DUMP_DATA_STR);
     ISP_ToolCom_SendData((uint8_t*)pFrame, size, dump_start_msg, dump_stop_msg);
   }
+  usbx_warn_dump_status(false);
 }
 
 /**
