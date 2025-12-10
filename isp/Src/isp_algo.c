@@ -30,7 +30,8 @@
 /* ISP algorithms identifier */
 typedef enum
 {
-  ISP_ALGO_ID_BADPIXEL = 0U,
+  ISP_ALGO_ID_BACKGROUND = 0U,
+  ISP_ALGO_ID_BADPIXEL,
   ISP_ALGO_ID_AEC,
   ISP_ALGO_ID_AWB,
   ISP_ALGO_ID_SENSOR_DELAY = 255U,
@@ -69,6 +70,9 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo);
 ISP_StatusTypeDef ISP_Algo_AWB_Init(void *hIsp, void *pAlgo);
 ISP_StatusTypeDef ISP_Algo_AWB_DeInit(void *hIsp, void *pAlgo);
 ISP_StatusTypeDef ISP_Algo_AWB_Process(void *hIsp, void *pAlgo);
+ISP_StatusTypeDef ISP_Algo_Background_Init(void *hIsp, void *pAlgo);
+ISP_StatusTypeDef ISP_Algo_Background_DeInit(void *hIsp, void *pAlgo);
+ISP_StatusTypeDef ISP_Algo_Background_Process(void *hIsp, void *pAlgo);
 #ifdef ISP_MW_TUNING_TOOL_SUPPORT
 ISP_StatusTypeDef ISP_Algo_SensorDelay_Init(void *hIsp, void *pAlgo);
 ISP_StatusTypeDef ISP_Algo_SensorDelay_DeInit(void *hIsp, void *pAlgo);
@@ -114,8 +118,17 @@ ISP_AlgoTypeDef ISP_Algo_SensorDelay = {
 };
 #endif
 
+/* Background algorithm handle for statistics update */
+ISP_AlgoTypeDef ISP_Algo_Background = {
+    .id = ISP_ALGO_ID_BACKGROUND,
+    .Init = ISP_Algo_Background_Init,
+    .DeInit = ISP_Algo_Background_DeInit,
+    .Process = ISP_Algo_Background_Process,
+};
+
 /* Registered algorithm list */
 ISP_AlgoTypeDef *ISP_Algo_List[] = {
+    &ISP_Algo_Background,
     &ISP_Algo_BadPixel,
 #ifdef ISP_MW_SW_AEC_ALGO_SUPPORT
     &ISP_Algo_AEC,
@@ -1037,6 +1050,124 @@ ISP_StatusTypeDef ISP_Algo_SensorDelay_Process(void *hIsp, void *pAlgo)
   return ret;
 }
 #endif /* ISP_MW_TUNING_TOOL_SUPPORT */
+
+
+/**
+  * @brief  ISP_Algo_Background_StatCb
+  *         Callback informing that statistics are available
+  * @param  pAlgo: ISP algorithm handle.
+  * @retval operation result
+  */
+ISP_StatusTypeDef ISP_Algo_Background_StatCb(ISP_AlgoTypeDef *pAlgo)
+{
+  /* Update State */
+  pAlgo->state = ISP_ALGO_STATE_STAT_READY;
+
+  return ISP_OK;
+}
+
+/**
+  * @brief  ISP_Algo_Background_Init
+  *         Initialize the Background algorithm
+  * @param  hIsp:  ISP device handle. To cast in (ISP_HandleTypeDef *).
+  * @param  pAlgo: ISP algorithm handle. To cast in (ISP_AlgoTypeDef *).
+  * @retval operation result
+  */
+ISP_StatusTypeDef ISP_Algo_Background_Init(void *hIsp, void *pAlgo)
+{
+  (void)hIsp; /* unused */
+
+  ((ISP_AlgoTypeDef *)pAlgo)->state = ISP_ALGO_STATE_INIT;
+
+  return ISP_OK;
+}
+
+/**
+  * @brief  ISP_Algo_Background_DeInit
+  *         Deinitialize the Background algorithm
+  * @param  hIsp:  ISP device handle. To cast in (ISP_HandleTypeDef *).
+  * @param  pAlgo: ISP algorithm handle. To cast in (ISP_AlgoTypeDef *).
+  * @retval operation result
+  */
+ISP_StatusTypeDef ISP_Algo_Background_DeInit(void *hIsp, void *pAlgo)
+{
+  (void)hIsp; /* unused */
+  (void)pAlgo; /* unused */
+
+  return ISP_OK;
+}
+
+/**
+  * @brief  ISP_Algo_Background_Process
+  *         Process called in case no algorithm is enabled to collect average statistics
+  *         for regular update
+  * @param  hIsp:  ISP device handle. To cast in (ISP_HandleTypeDef *).
+  * @param  pAlgo: ISP algorithm handle. To cast in (ISP_AlgoTypeDef *).
+  * @retval operation result
+  */
+ISP_StatusTypeDef ISP_Algo_Background_Process(void *hIsp, void *pAlgo)
+{
+  static ISP_SVC_StatStateTypeDef stats;
+  ISP_AlgoTypeDef *algo = (ISP_AlgoTypeDef *)pAlgo;
+  ISP_IQParamTypeDef *IQParamConfig;
+  ISP_StatusTypeDef ret = ISP_OK;
+
+  IQParamConfig = ISP_SVC_IQParam_Get(hIsp);
+
+#ifdef ISP_MW_SW_AEC_ALGO_SUPPORT
+  if (IQParamConfig->AECAlgo.enable == true)
+  {
+    /* No need to collect other statistics for regular update*/
+    return ISP_OK;
+  }
+#endif /* ISP_MW_SW_AEC_ALGO_SUPPORT */
+#ifdef ISP_MW_SW_AWB_ALGO_SUPPORT
+  if (IQParamConfig->AWBAlgo.enable == true)
+  {
+    /* No need to collect other statistics for regular update*/
+    return ISP_OK;
+  }
+#endif /* ISP_MW_SW_AWB_ALGO_SUPPORT */
+
+  switch(algo->state)
+  {
+  case ISP_ALGO_STATE_INIT:
+  case ISP_ALGO_STATE_NEED_STAT:
+    /* Ask for stats */
+    ret = ISP_SVC_Stats_GetNext(hIsp, &ISP_Algo_Background_StatCb, pAlgo, &stats, ISP_STAT_LOC_DOWN,
+                                ISP_STAT_TYPE_AVG, IQParamConfig->sensorDelay.delay);
+    if (ret != ISP_OK)
+    {
+      return ret;
+    }
+
+    /* Wait for stats to be ready */
+    algo->state = ISP_ALGO_STATE_WAITING_STAT;
+    break;
+
+  case ISP_ALGO_STATE_WAITING_STAT:
+    /* Do nothing */
+    break;
+
+  case ISP_ALGO_STATE_STAT_READY:
+    /* Ask for stats */
+    ret = ISP_SVC_Stats_GetNext(hIsp, &ISP_Algo_Background_StatCb, pAlgo, &stats, ISP_STAT_LOC_DOWN,
+                                ISP_STAT_TYPE_AVG, IQParamConfig->sensorDelay.delay);
+
+    /* Wait for stats to be ready */
+    algo->state = ISP_ALGO_STATE_WAITING_STAT;
+    break;
+
+  default:
+    printf("WARNING: Unknown background algo state\r\n");
+    /* Reset state to ISP_ALGO_STATE_INIT */
+    algo->state = ISP_ALGO_STATE_INIT;
+    break;
+
+  }
+
+  return ret;
+}
 
 /* Exported functions --------------------------------------------------------*/
 /**
