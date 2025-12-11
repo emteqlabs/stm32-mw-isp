@@ -339,7 +339,7 @@ ISP_StatusTypeDef ISP_Algo_AEC_StatCb(ISP_AlgoTypeDef *pAlgo)
 
 /**
   * @brief  ISP_Algo_AEC_Process
-  *         Process the AEC algorithm. This basic algorithm controls the sensor gain
+  *         Process the AEC algorithm. This basic algorithm controls the sensor exposure
   *         in order to reach an average luminance of exposureTarget.
   * @param  hIsp:  ISP device handle. To cast in (ISP_HandleTypeDef *).
   * @param  pAlgo: ISP algorithm handle. To cast in (ISP_AlgoTypeDef *).
