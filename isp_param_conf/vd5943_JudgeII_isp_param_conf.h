@@ -21,8 +21,8 @@
 #ifndef __ISP_PARAM_CONF__H
 #define __ISP_PARAM_CONF__H
 
-/* DCMIPP ISP configuration for VD5941 sensor */
-static const ISP_IQParamTypeDef ISP_IQParamCacheInit_VD5941 = {
+/* DCMIPP ISP configuration for VD5943 sensor */
+static const ISP_IQParamTypeDef ISP_IQParamCacheInit_VD5943 = {
     .sensorGainStatic = {
         .gain = 0,
     },
@@ -133,7 +133,7 @@ static const ISP_IQParamTypeDef ISP_IQParamCacheInit_VD5941 = {
 };
 
 static const ISP_IQParamTypeDef* ISP_IQParamCacheInit[] = {
-    &ISP_IQParamCacheInit_VD5941
+    &ISP_IQParamCacheInit_VD5943
 };
 
 #endif /* __ISP_PARAM_CONF__H */
