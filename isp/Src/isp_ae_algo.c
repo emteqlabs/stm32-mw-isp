@@ -206,6 +206,10 @@ void isp_ae_get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposur
           ((double)IQParamConfig->luxRef.LL_Expo1 / IQParamConfig->luxRef.LL_Lum1 -
            (double)IQParamConfig->luxRef.LL_Expo2 / IQParamConfig->luxRef.LL_Lum2) /
           ((double)IQParamConfig->luxRef.LL_Expo1 - IQParamConfig->luxRef.LL_Expo2))) / AE_LOW_LUX_LIMIT) + 1) * AE_LOW_LUX_LIMIT;
+  uint32_t custom_high_lux_limit = ((uint32_t)(((double)IQParamConfig->AECAlgo.exposureTarget * IQParamConfig->luxRef.calibFactor * (IQParamConfig->luxRef.HL_LuxRef *
+          ((double)IQParamConfig->luxRef.HL_Expo1 / IQParamConfig->luxRef.HL_Lum1 -
+           (double)IQParamConfig->luxRef.HL_Expo2 / IQParamConfig->luxRef.HL_Lum2) /
+          ((double)IQParamConfig->luxRef.HL_Expo1 - IQParamConfig->luxRef.HL_Expo2))) / AE_LOW_LUX_LIMIT) + 1) * AE_LOW_LUX_LIMIT;
   uint32_t curExposure, curGain;
 
   /**** Handle start conditions ****/
@@ -243,7 +247,7 @@ void isp_ae_get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposur
     /* The AE algorithm process intends to calculate the sensor exposure needed to approach the luminance target */
 
     /**** Select the estimation model to apply according to the lux value ****/
-    if (lux <= IQParamConfig->luxRef.HL_LuxRef)
+    if ((lux <= IQParamConfig->luxRef.HL_LuxRef) || (lux <= custom_high_lux_limit))
     {
       /**** Apply ESTIMATION 2 model below 𝐿𝑢𝑥𝑅𝑒𝑓_𝐻𝐿 ****/
       /* Calculate a and b with the low lux references to improve precision when lux is under HL_LuxRef */
