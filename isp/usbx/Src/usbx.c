@@ -718,7 +718,7 @@ void usbx_write(unsigned char *msg, uint32_t len)
   /* Dirty hack that allows to dump frame with windows environment
    * It slows down the acknowledge before a new transmission
    */
-  for (uint32_t i = 0 ; i < 100000 ; i++);
+  for (uint32_t i = 0 ; i < 30000 ; i++);
 
 #if defined (ISP_ENABLE_UVC)
   if (dump_is_stopping)
