@@ -20,6 +20,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "stm32n6xx_hal.h"
 
@@ -31,7 +32,6 @@
 #define ARRAY_LEN(a) (sizeof(a)/sizeof(a[0]))
 
 #define DEV_MANUFACTURER_STRING      "STMicroelectronics"
-#define DEV_PRODUCT_STRING           "STM32 uvc"
 
 static void gen_serial_int_to_ascii(uint32_t value, char *p_buf, uint8_t len)
 {
@@ -386,7 +386,19 @@ int usb_get_manufacturer_string_desc(void *p_dst, int dst_len)
 
 int usb_get_product_string_desc(void *p_dst, int dst_len)
 {
-  return usb_get_string_desc(p_dst, dst_len, DEV_PRODUCT_STRING);
+  char dev_prod[64];
+  uint32_t uId[3];
+
+  uId[0] = HAL_GetUIDw0();
+  uId[1] = HAL_GetUIDw1();
+  uId[2] = HAL_GetUIDw2();
+
+  /* Build: "STM32 IQTUNE Camera " + 3x32-bit UID in hex */
+  (void)snprintf(dev_prod, sizeof(dev_prod),
+                     "STM32 IQTune Camera %08lX%08lX%08lX",
+                     (unsigned long)uId[2], (unsigned long)uId[1], (unsigned long)uId[0]);
+
+  return usb_get_string_desc(p_dst, dst_len, dev_prod);
 }
 
 int usb_get_serial_string_desc(void *p_dst, int dst_len)
