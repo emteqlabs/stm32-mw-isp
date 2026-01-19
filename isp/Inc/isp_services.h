@@ -29,6 +29,7 @@ typedef enum {
   ISP_STAT_LOC_UP            = 0x01U << 0,
   ISP_STAT_LOC_DOWN          = 0x01U << 1,
   ISP_STAT_LOC_UP_AND_DOWN   = (ISP_STAT_LOC_UP | ISP_STAT_LOC_DOWN),
+  ISP_STAT_LOC_EXT           = 0x01U << 2,
 } ISP_SVC_StatLocation;
 
 typedef enum {
