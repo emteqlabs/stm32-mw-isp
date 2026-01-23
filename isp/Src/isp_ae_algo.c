@@ -26,8 +26,8 @@
 #define AE_FINE_TOLERANCE_LOW_LUX(target)   ((target) < 15 ? 8 : 10)
 #define AE_COARSE_TOLERANCE                 10
 #define AE_COARSE_TOLERANCE_LOW_LUX(target) ((target) < 15 ? 10 : 15)
-#define AE_TOLERANCE                        0.10  /* % */
-#define AE_TOLERANCE_LOW_LUX                0.15  /* % */
+#define AE_TOLERANCE                        0.10f  /* % */
+#define AE_TOLERANCE_LOW_LUX                0.15f  /* % */
 
 #define AE_LOW_LUX_LIMIT                    50    /* lux */
 
@@ -202,11 +202,11 @@ void isp_ae_get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposur
   double a, b, c, d;
   double cur_global_exposure = exposure * pow(10, (double)gain / 20000);
   double new_global_exposure;
-  uint32_t custom_low_lux_limit = ((uint32_t)(((double)IQParamConfig->AECAlgo.exposureTarget * IQParamConfig->luxRef.calibFactor * (IQParamConfig->luxRef.LL_LuxRef *
+  uint32_t custom_low_lux_limit = ((uint32_t)(((double)IQParamConfig->AECAlgo.exposureTarget * (double)IQParamConfig->luxRef.calibFactor * (IQParamConfig->luxRef.LL_LuxRef *
           ((double)IQParamConfig->luxRef.LL_Expo1 / IQParamConfig->luxRef.LL_Lum1 -
            (double)IQParamConfig->luxRef.LL_Expo2 / IQParamConfig->luxRef.LL_Lum2) /
           ((double)IQParamConfig->luxRef.LL_Expo1 - IQParamConfig->luxRef.LL_Expo2))) / AE_LOW_LUX_LIMIT) + 1) * AE_LOW_LUX_LIMIT;
-  uint32_t custom_high_lux_limit = ((uint32_t)(((double)IQParamConfig->AECAlgo.exposureTarget * IQParamConfig->luxRef.calibFactor * (IQParamConfig->luxRef.HL_LuxRef *
+  uint32_t custom_high_lux_limit = ((uint32_t)(((double)IQParamConfig->AECAlgo.exposureTarget * (double)IQParamConfig->luxRef.calibFactor * (IQParamConfig->luxRef.HL_LuxRef *
           ((double)IQParamConfig->luxRef.HL_Expo1 / IQParamConfig->luxRef.HL_Lum1 -
            (double)IQParamConfig->luxRef.HL_Expo2 / IQParamConfig->luxRef.HL_Lum2) /
           ((double)IQParamConfig->luxRef.HL_Expo1 - IQParamConfig->luxRef.HL_Expo2))) / AE_LOW_LUX_LIMIT) + 1) * AE_LOW_LUX_LIMIT;
@@ -277,7 +277,7 @@ void isp_ae_get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposur
       /**** Switch to ESTIMATION 3 model below 𝑐𝑢𝑠𝑡𝑜𝑚_𝑙𝑜𝑤_𝑙𝑢𝑥_𝑙𝑖𝑚𝑖𝑡 ****/
       /* Calculate coefficient for very low lux model as we reach the limit of the previous one */
       d = pSensorInfo->exposure_max * pow(10, (double)pSensorInfo->again_max / 20000);
-      c = ((b / (((double)custom_low_lux_limit / ((double)IQParamConfig->AECAlgo.exposureTarget * IQParamConfig->luxRef.calibFactor)) - (double)a)) - d) / custom_low_lux_limit;
+      c = ((b / (((double)custom_low_lux_limit / ((double)IQParamConfig->AECAlgo.exposureTarget * (double)IQParamConfig->luxRef.calibFactor)) - (double)a)) - d) / custom_low_lux_limit;
 
       /* Compute new global exposure to apply in ESTIMATION 3 model*/
       new_global_exposure = (c * (double)lux) + d;
@@ -287,7 +287,7 @@ void isp_ae_get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposur
       /**** Process ESTIMATION 1 or 2 model ****/
       /* Compute new global exposure to apply in ESTIMATION 1 or 2 model*/
       /* Else apply previous estimation model with a and b coefficients */
-      new_global_exposure = b / (((double)lux / ((double)IQParamConfig->AECAlgo.exposureTarget * IQParamConfig->luxRef.calibFactor)) - (double)a);
+      new_global_exposure = b / (((double)lux / ((double)IQParamConfig->AECAlgo.exposureTarget * (double)IQParamConfig->luxRef.calibFactor)) - (double)a);
     }
 
     /**** Check validity of new global exposure ****/
@@ -308,7 +308,7 @@ void isp_ae_get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposur
         new_global_exposure = -1; // reset to -1
 
         /* Same lux estimation but previous setting did not allow convergence, so we need to change it */
-        if ((abs((int32_t)lux - (int32_t)previous_lux) <= (float)lux * 0.05) && (lux != 0))
+        if ((abs((int32_t)lux - (int32_t)previous_lux) <= (float)lux * 0.05f) && (lux != 0))
         {
           /* Use the luminance information for readjustment */
           new_global_exposure = cur_global_exposure * ((double)IQParamConfig->AECAlgo.exposureTarget / averageL);
@@ -354,7 +354,7 @@ void isp_ae_get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposur
         new_global_exposure = -1;
 
         /* Same lux estimation but previous setting did not allow convergence, so we need to change it */
-        if ((abs((int32_t)lux - (int32_t)previous_lux) <= (float)lux * 0.05) && (lux != 0))
+        if ((abs((int32_t)lux - (int32_t)previous_lux) <= (float)lux * 0.05f) && (lux != 0))
         {
           /* Use the luminance information for readjustment */
           new_global_exposure = cur_global_exposure * ((double)IQParamConfig->AECAlgo.exposureTarget / averageL);
@@ -400,7 +400,7 @@ void isp_ae_get_new_exposure(uint32_t lux, uint32_t averageL, uint32_t *pExposur
     else
     {
       *pExposure = pSensorInfo->exposure_max;
-      *pGain = (uint32_t)(20 * 1000 * log10(new_global_exposure / (float)(*pExposure)));
+      *pGain = (uint32_t)(20 * 1000 * log10(new_global_exposure / (double)(*pExposure)));
 
       /* Limit digital gain (lux value is very low and the gain is already very high and we need to avoid oscillations) */
       if ((*pGain > pSensorInfo->again_max) && (abs((int32_t)*pGain - (int32_t)curGain) > AE_MAX_GAIN_INCREMENT))
