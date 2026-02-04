@@ -941,8 +941,15 @@ static ISP_StatusTypeDef ISP_CmdParser_GetConfig(ISP_HandleTypeDef *hIsp, uint8_
     }
     else
     {
-      c.framedata.luxEstimation = ISP_SVC_Misc_GetEstimatedLux(hIsp);
-      /* This function returns -1 in case current settings do not allow to calculate the lux value */
+      uint32_t lux;
+      ret = ISP_GetLuxEstimation(hIsp, &lux);
+      if (ret != ISP_OK){
+        /* Since this command is called frequently and to prevent the ISP IQTUNE application from locking up,
+           we choose to ignore the ISP error and return lux = 0 to indicate that the value cannot be estimated */
+        ret = ISP_OK;
+        lux = 0;
+      }
+      c.framedata.luxEstimation = (int32_t)lux;
     }
     if (IQParamConfig->AWBAlgo.enable)
     {

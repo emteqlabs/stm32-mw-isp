@@ -421,7 +421,7 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
       return ret;
     }
 
-    estimated_lux = ISP_SVC_Misc_GetEstimatedLux(hIsp);
+    estimated_lux = ISP_SVC_Misc_GetEstimatedLux(hIsp, (uint8_t)avgL);
 
 #ifdef ALGO_AEC_DBG_LOGS
     printf("Lux = %"PRIu32", L = %"PRIu32", E = %"PRIu32", G = %"PRIu32"\r\n", estimated_lux, avgL, exposureConfig.exposure, gainConfig.gain);

@@ -742,7 +742,16 @@ void ISP_OutputMeta(ISP_HandleTypeDef *hIsp)
 ISP_StatusTypeDef ISP_GetLuxEstimation(ISP_HandleTypeDef *hIsp, uint32_t *pLux)
 {
   ISP_StatusTypeDef ret = ISP_OK;
-  int32_t lux = ISP_SVC_Misc_GetEstimatedLux(hIsp);
+  ISP_SVC_StatStateTypeDef stats;
+  int32_t lux;
+
+  ret = ISP_SVC_Stats_GetLatest(hIsp, &stats);
+  if (ret != ISP_OK)
+  {
+     return ISP_ERR_STAT_EINVAL;
+  }
+
+  lux = ISP_SVC_Misc_GetEstimatedLux(hIsp, stats.down.averageL);
 
   if ((pLux == NULL) || (lux < 0))
   {

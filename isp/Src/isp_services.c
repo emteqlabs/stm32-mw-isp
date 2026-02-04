@@ -2149,13 +2149,13 @@ ISP_StatusTypeDef ISP_SVC_Stats_EvaluateUp(ISP_HandleTypeDef *hIsp, ISP_Statisti
   * @brief  ISP_SVC_Misc_GetEstimatedLux
   *         Estimate the lux value of the scene captured by the sensor
   * @param  hIsp: ISP device handle
+  *         averageL: luminance average statistic value of the area where the lux is estimated
   * @retval estimated lux value (-1 if exposure is null, no possible estimation)
   */
-int32_t ISP_SVC_Misc_GetEstimatedLux(ISP_HandleTypeDef *hIsp)
+int32_t ISP_SVC_Misc_GetEstimatedLux(ISP_HandleTypeDef *hIsp, uint8_t averageL)
 {
   ISP_SensorExposureTypeDef exposureConfig;
   ISP_SensorGainTypeDef gainConfig;
-  ISP_SVC_StatStateTypeDef stats;
   ISP_IQParamTypeDef *IQParamConfig;
   double a, b, globalExposure;
   int32_t lux;
@@ -2169,12 +2169,6 @@ int32_t ISP_SVC_Misc_GetEstimatedLux(ISP_HandleTypeDef *hIsp)
   }
 
   ret = ISP_SVC_Sensor_GetGain(hIsp, &gainConfig);
-  if (ret != ISP_OK)
-  {
-    return -1;
-  }
-
-  ret = ISP_SVC_Stats_GetLatest(hIsp, &stats);
   if (ret != ISP_OK)
   {
     return -1;
@@ -2211,7 +2205,7 @@ int32_t ISP_SVC_Misc_GetEstimatedLux(ISP_HandleTypeDef *hIsp)
     return 0;
   }
 
-  lux = (int32_t)((double)IQParamConfig->luxRef.calibFactor * (a * globalExposure + b) * stats.down.averageL / globalExposure);
+  lux = (int32_t)((double)IQParamConfig->luxRef.calibFactor * (a * globalExposure + b) * averageL / globalExposure);
 
   if (lux <= IQParamConfig->luxRef.HL_LuxRef * 0.9)
   {
@@ -2224,7 +2218,7 @@ int32_t ISP_SVC_Misc_GetEstimatedLux(ISP_HandleTypeDef *hIsp)
     b = (IQParamConfig->luxRef.LL_LuxRef * (double)IQParamConfig->luxRef.LL_Expo1 / IQParamConfig->luxRef.LL_Lum1) -
         (a * IQParamConfig->luxRef.LL_Expo1);
 
-    lux = (int32_t)((double)IQParamConfig->luxRef.calibFactor * (a * globalExposure + b) * stats.down.averageL / globalExposure);
+    lux = (int32_t)((double)IQParamConfig->luxRef.calibFactor * (a * globalExposure + b) * averageL / globalExposure);
   }
 
   Meta.lux = (uint32_t)((lux < 0) ? 0 : lux);
