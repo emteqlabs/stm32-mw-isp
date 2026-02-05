@@ -711,12 +711,6 @@ void usbx_write(unsigned char *msg, uint32_t len)
   ret = ux_device_class_cdc_acm_write(cdc_acm, msg, len, &len_send);
   assert(ret == 0);
   assert(len_send == len);
-
-  /* Dirty hack that allows to dump frame with windows environment
-   * It slows down the acknowledge before a new transmission
-   */
-  for (uint32_t i = 0 ; i < 30000 ; i++);
-
 }
 
 #if defined (ISP_ENABLE_UVC)
