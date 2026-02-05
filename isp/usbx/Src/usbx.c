@@ -440,6 +440,7 @@ static void uvc_stream_change(struct UX_DEVICE_CLASS_VIDEO_STREAM_STRUCT *stream
 
   if (alternate_setting == 0) {
     uvc_stop_streaming(stream);
+    uvc_is_streaming = 0;
     return ;
   }
 
@@ -665,19 +666,28 @@ static void usbx_read_thread_fct(ULONG arg)
   assert(0);
 }
 
-static uint8_t dump_is_starting = 0;
-static uint8_t dump_is_stopping = 0;
 void usbx_warn_dump_status(uint8_t on_going)
 {
+#if defined (ISP_ENABLE_UVC)
   if (on_going)
   {
-    dump_is_starting = 1;
+    if (uvc_is_streaming)
+    {
+      /* In case UVC is streaming */
+      /* If dump is just started, suspend the UVC thread */
+      _ux_utility_thread_suspend(UVC_thread);
+    }
   }
   else
   {
-    dump_is_stopping = 1;
+    if (uvc_is_streaming)
+    {
+      /* If UVC was streaming before the dump procedure*/
+      /* Once dump is finished, resume the UVC thread */
+      _ux_utility_thread_resume(UVC_thread);
+    }
   }
-
+#endif /* ISP_ENABLE_UVC */
 }
 
 void usbx_write(unsigned char *msg, uint32_t len)
@@ -686,19 +696,6 @@ void usbx_write(unsigned char *msg, uint32_t len)
   UX_SLAVE_CLASS_CDC_ACM_LINE_STATE_PARAMETER line_state;
   ULONG len_send;
   int ret;
-
-#if defined (ISP_ENABLE_UVC)
-  if (dump_is_starting)
-  {
-	if (uvc_is_streaming)
-	{
-	  /* In case UVC is streaming */
-      /* If dump is just started, suspend the UVC thread */
-      _ux_utility_thread_suspend(UVC_thread);
-	}
-    dump_is_starting = 0;
-  }
-#endif /* ISP_ENABLE_UVC */
 
   if (device->ux_slave_device_state != UX_DEVICE_CONFIGURED)
     return ;
@@ -720,18 +717,6 @@ void usbx_write(unsigned char *msg, uint32_t len)
    */
   for (uint32_t i = 0 ; i < 30000 ; i++);
 
-#if defined (ISP_ENABLE_UVC)
-  if (dump_is_stopping)
-  {
-	if (uvc_is_streaming)
-	{
-	  /* If UVC was streaming before the dump procedure*/
-	  /* Once dump is finished, resume the UVC thread */
-      _ux_utility_thread_resume(UVC_thread);
-	}
-    dump_is_stopping = 0;
-  }
-#endif /* ISP_ENABLE_UVC */
 }
 
 #if defined (ISP_ENABLE_UVC)
