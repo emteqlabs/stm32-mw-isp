@@ -544,14 +544,14 @@ static UX_SLAVE_CLASS_CDC_ACM *cdc_acm;
 
 VOID cdc_acm_activate(VOID *cdc_acm_instance)
 {
-  printf("%s %p\n", __func__, cdc_acm_instance);
+  printf("%s %p\r\n", __func__, cdc_acm_instance);
   cdc_acm = cdc_acm_instance;
 }
 
 VOID cdc_acm_deactivate(VOID *cdc_acm_instance)
 {
   cdc_acm = NULL;
-  printf("%s %p\n", __func__, cdc_acm_instance);
+  printf("%s %p\r\n", __func__, cdc_acm_instance);
 }
 
 
@@ -572,16 +572,16 @@ VOID cdc_acm_parameter_change(VOID *cdc_acm_instance)
   case UX_SLAVE_CLASS_CDC_ACM_SET_LINE_CODING:
     ret = ux_device_class_cdc_acm_ioctl(cdc_acm_instance, UX_SLAVE_CLASS_CDC_ACM_IOCTL_GET_LINE_CODING, &line_coding);
     assert(ret == 0);
-    printf("Set %d bps\n", (int) line_coding.ux_slave_class_cdc_acm_parameter_baudrate);
+    printf("Set %d bps\r\n", (int) line_coding.ux_slave_class_cdc_acm_parameter_baudrate);
     break;
   case UX_SLAVE_CLASS_CDC_ACM_SET_CONTROL_LINE_STATE:
     ret = ux_device_class_cdc_acm_ioctl(cdc_acm_instance, UX_SLAVE_CLASS_CDC_ACM_IOCTL_GET_LINE_STATE, &line_state);
     assert(ret == 0);
-    printf("Set line state rts = %d / dtr = %d\n", (int) line_state.ux_slave_class_cdc_acm_parameter_rts,
-                                                   (int) line_state.ux_slave_class_cdc_acm_parameter_dtr);
+    /* printf("Set line state rts = %d / dtr = %d\r\n", (int) line_state.ux_slave_class_cdc_acm_parameter_rts,
+                                                   (int) line_state.ux_slave_class_cdc_acm_parameter_dtr);*/
     break;
   default:
-    printf("Unsupported request 0x%08x (%d)\n", (int)request, (int)request);
+    printf("Unsupported request 0x%08x (%d)\r\n", (int)request, (int)request);
   }
 }
 
