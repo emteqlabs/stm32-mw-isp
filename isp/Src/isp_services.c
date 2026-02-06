@@ -1925,6 +1925,16 @@ void ISP_SVC_Stats_Gather(ISP_HandleTypeDef *hIsp)
   /* Cycle start / end */
   frameId = ISP_SVC_Misc_GetMainFrameId(hIsp);
 
+  if (hIsp->appliHelpers.GetExternalStatistics != NULL)
+  {
+    ISP_SVC_StatEngine.last.extFrameId = frameId;
+    if (hIsp->appliHelpers.GetExternalStatistics(hIsp->cameraInstance, &ISP_SVC_StatEngine.last.extStats) != ISP_OK)
+    {
+      ISP_SVC_StatEngine.last.extStats.nbAreas = 0;
+      ISP_SVC_StatEngine.last.extStats.stats = NULL;
+    }
+  }
+
   if (stagePrevious2 == GetStatCycleStart(ISP_STAT_LOC_UP))
   {
     ongoing->upFrameIdStart = frameId;
@@ -1999,7 +2009,8 @@ ISP_StatusTypeDef ISP_SVC_Stats_ProcessCallbacks(ISP_HandleTypeDef *hIsp)
     /* Check if stats are available for a client, comparing the location and the specified frameId */
     if (((client->location == ISP_STAT_LOC_DOWN) && (client->refFrameId <= pLastStat->downFrameIdStart)) ||
         ((client->location == ISP_STAT_LOC_UP) && (client->refFrameId <= pLastStat->upFrameIdStart)) ||
-        ((client->location == ISP_STAT_LOC_UP_AND_DOWN) && (client->refFrameId <= pLastStat->upFrameIdStart) && (client->refFrameId <= pLastStat->downFrameIdStart)))
+        ((client->location == ISP_STAT_LOC_UP_AND_DOWN) && (client->refFrameId <= pLastStat->upFrameIdStart) && (client->refFrameId <= pLastStat->downFrameIdStart)) ||
+        ((client->location == ISP_STAT_LOC_EXT) && (client->refFrameId <= pLastStat->extFrameId)))
     {
       /* Copy the stats into the client buffer */
       *(client->pStats) = *pLastStat;
@@ -2088,6 +2099,13 @@ ISP_StatusTypeDef ISP_SVC_Stats_GetNext(ISP_HandleTypeDef *hIsp, ISP_stat_ready_
     ISP_SVC_StatEngine.downRequest |= type;
   }
 
+  if (location & ISP_STAT_LOC_EXT)
+  {
+    /* initialize caller's pStats ext fields to safe default */
+    pStats->extStats.nbAreas = 0;
+    pStats->extStats.stats = NULL;
+  }
+
   if (type == ISP_STAT_TYPE_ALL_TMP)
   {
     /* Special case: request all stats for a short time (3 cycle) */
@@ -2103,6 +2121,22 @@ ISP_StatusTypeDef ISP_SVC_Stats_GetNext(ISP_HandleTypeDef *hIsp, ISP_stat_ready_
   ISP_SVC_StatEngine.client[i].refFrameId = refFrameId;
 
   return ISP_OK;
+}
+
+/**
+  * @brief  ISP_SVC_Stats_WeightedAverageL
+  *         Weighted averageL calculation
+  * @param  extStats: pointer to external statistics data
+  * @retval weighted averageL
+  */
+uint8_t ISP_SVC_Stats_WeightedAverageL(const ISP_ExternalStatsTypeDef *extStats)
+{
+  float sum = 0, wsum = 0;
+  for (uint8_t i = 0; i < extStats->nbAreas; ++i) {
+    sum += extStats->stats[i].averageL * extStats->stats[i].weight;
+    wsum += extStats->stats[i].weight;
+  }
+  return (wsum > 0) ? (uint8_t)(sum / wsum) : 0;
 }
 
 /**

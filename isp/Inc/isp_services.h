@@ -29,7 +29,7 @@ typedef enum {
   ISP_STAT_LOC_UP            = 0x01U << 0,
   ISP_STAT_LOC_DOWN          = 0x01U << 1,
   ISP_STAT_LOC_UP_AND_DOWN   = (ISP_STAT_LOC_UP | ISP_STAT_LOC_DOWN),
-  ISP_STAT_LOC_EXT           = 0x01U << 2,
+  ISP_STAT_LOC_EXT           = (0x01U << 2 | ISP_STAT_LOC_DOWN),
 } ISP_SVC_StatLocation;
 
 typedef enum {
@@ -47,6 +47,8 @@ typedef struct {
   uint32_t upFrameIdEnd;      /* Frame id of the last frame of the gather cycle at up side */
   uint32_t downFrameIdStart;  /* Frame id of the first frame of the gather cycle at down side */
   uint32_t downFrameIdEnd;    /* Frame id of the last frame of the gather cycle at down side */
+  ISP_ExternalStatsTypeDef extStats; /* External stats for AE and lux only */
+  uint32_t extFrameId;
 } ISP_SVC_StatStateTypeDef;
 
 typedef ISP_StatusTypeDef (*ISP_stat_ready_cb)(ISP_AlgoTypeDef *pAlgo);
@@ -124,5 +126,6 @@ ISP_StatusTypeDef ISP_SVC_Stats_GetNext(ISP_HandleTypeDef *hIsp, ISP_stat_ready_
 ISP_StatusTypeDef ISP_SVC_Stats_ProcessCallbacks(ISP_HandleTypeDef *hIsp);
 ISP_StatusTypeDef ISP_SVC_Stats_EvaluateUp(ISP_HandleTypeDef *hIsp, ISP_StatisticsTypeDef *pDownStats, ISP_StatisticsTypeDef *pUpStats);
 void ISP_SVC_Stats_Gather(ISP_HandleTypeDef *hIsp);
+uint8_t ISP_SVC_Stats_WeightedAverageL(const ISP_ExternalStatsTypeDef *extStats);
 
 #endif /* __ISP_SERVICES__H */
