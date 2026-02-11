@@ -23,7 +23,7 @@
 
 #define USBX_ALIGN_32 __attribute__ ((aligned (32)))
 #define USBX_UNCACHED __attribute__ ((section (".uncached_bss")))
-#if defined(ISP_ENABLE_UVC) && defined(ISP_UVC_USE_DMA)
+#if defined(USBX_USE_DMA)
 #define USBX_ATTR USBX_UNCACHED USBX_ALIGN_32
 #else
 #define USBX_ATTR

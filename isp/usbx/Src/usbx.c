@@ -30,7 +30,7 @@
 #include "isp_tool_com.h"
 
 static uint8_t usbx_mem_pool[USBX_MEM_SIZE] USBX_ALIGN_32;
-#if defined(ISP_ENABLE_UVC) && defined(ISP_UVC_USE_DMA)
+#if defined(USBX_USE_DMA)
 static uint8_t usbx_mem_pool_uncached[USBX_MEM_SIZE] USBX_ATTR;
 #endif
 
@@ -54,7 +54,7 @@ uint8_t rx_buffer[RX_PACKET_SIZE];
 #if defined (ISP_ENABLE_UVC)
 
 static uvc_ctx_t uvc_ctx = {0};
-static uint8_t uvc_packet[UVC_ISO_HS_MPS];
+static uint8_t uvc_packet[UVC_ISO_HS_MPS] USBX_ATTR;
 
 static int uvc_fps_ok(uvc_ctx_t *p_ctx)
 {
@@ -748,7 +748,7 @@ int usbx_init(PCD_HandleTypeDef *pcd_handle, PCD_TypeDef *pcd_instance, uvc_conf
   int len;
   int ret;
 
-#if defined(ISP_ENABLE_UVC) && defined(ISP_UVC_USE_DMA)
+#if defined(USBX_USE_DMA)
   ret = ux_system_initialize(usbx_mem_pool, USBX_MEM_SIZE, usbx_mem_pool_uncached, USBX_MEM_SIZE);
 #else
   ret = ux_system_initialize(usbx_mem_pool, USBX_MEM_SIZE, UX_NULL, 0);
