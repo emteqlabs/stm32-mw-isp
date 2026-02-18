@@ -27,10 +27,13 @@ ISP_MW_TUNING_TOOL_SUPPORT must be enabled.
   - VD1943
   - VD65G4
   - VD56G3 (MONO)
+- **UVC streaming** is now supported for a better STM32 ISP IQTune user experience
+
+## Compatibility
+Compatible with STM32 ISP IQTune 2.0.0 (No backward compatibility with previous STM32 ISP IQTune version).
 
 ## Known Issues and Limitations
-- **Not compatible with version 1.3.0 of STM32 ISP IQTune** desktop application \
-  A new compatible version 2.0.0 will be released begining of 2026.
+None
 
 ## STM32 ISP IQTune desktop application
 <https://www.st.com/en/development-tools/stm32-isp-iqtune.html>
