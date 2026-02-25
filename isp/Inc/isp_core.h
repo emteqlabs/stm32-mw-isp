@@ -164,54 +164,6 @@ typedef struct
   uint32_t exposure_max;
 } ISP_SensorInfoTypeDef;
 
-/* ISP application helpers providing control of non ISP features */
-typedef struct
-{
-  /* [OPTIONAL] Enable the camera preview on the LCD display */
-  ISP_StatusTypeDef (*StartPreview)(void *pHdcmipp);
-  /* [OPTIONAL] Disable the camera preview on the LCD display */
-  ISP_StatusTypeDef (*StopPreview)(void *pHdcmipp);
-  /* [OPTIONAL] Dump a frame of the camera pipeline. The parameters are:
-  *    pHdcmipp:  DCMIPP device handle.
-  *    Pipe:      Pipe where to perform the dump ('DUMP'(0) or 'ANCILLARY'(2))
-  *    Config:    Dump with the current pipe config, or without downsizing with
-  *               a specific pixel format.
-  *    pBuffer:   Pointer to the address of the dumped buffer (output parameter)
-  *    pMeta:     Pointer to buffer meta data (output parameter)
-  */
-  ISP_StatusTypeDef (*DumpFrame)(void *pHdcmipp,
-                                 uint32_t Pipe,
-                                 ISP_DumpCfgTypeDef Config,
-                                 uint32_t **pBuffer,
-                                 ISP_DumpFrameMetaTypeDef *pMeta);
-  /* [MANDATORY] Get sensor info */
-  ISP_StatusTypeDef (*GetSensorInfo)(uint32_t Instance, ISP_SensorInfoTypeDef *Info);
-  /* [MANDATORY] Set sensor gain */
-  ISP_StatusTypeDef (*SetSensorGain)(uint32_t Instance, int32_t Gain);
-  /* [MANDATORY] Get sensor gain */
-  ISP_StatusTypeDef (*GetSensorGain)(uint32_t Instance, int32_t *Gain);
-  /* [MANDATORY] Set sensor exposure */
-  ISP_StatusTypeDef (*SetSensorExposure)(uint32_t Instance, int32_t Exposure);
-  /* [MANDATORY] Get sensor exposure */
-  ISP_StatusTypeDef (*GetSensorExposure)(uint32_t Instance, int32_t *Exposure);
-  /* [OPTIONAL] Set sensor test pattern */
-  ISP_StatusTypeDef (*SetSensorTestPattern)(uint32_t Instance, int32_t mode);
-} ISP_AppliHelpersTypeDef;
-
-/* ISP Device handle structure */
-typedef struct
-{
-  void *hDcmipp;
-  uint32_t cameraInstance;
-  ISP_StatAreaTypeDef statArea;
-  ISP_AlgoTypeDef **algorithm;
-  ISP_AppliHelpersTypeDef appliHelpers;
-  uint32_t MainPipe_FrameCount;
-  uint32_t AncillaryPipe_FrameCount;
-  uint32_t DumpPipe_FrameCount;
-  ISP_SensorInfoTypeDef sensorInfo;
-} ISP_HandleTypeDef;
-
 /* ISP Demosaicing type */
 typedef enum
 {
@@ -387,7 +339,14 @@ typedef struct
   uint8_t averageB;           /* Average of the blue component */
   uint8_t averageL;           /* Average of the Luminance */
   uint32_t histogram[12];     /* Histogram of the L, R, G or B component */
+  float weight;               /* Weigth of the statistic. In case of multiple statistic area are processed, it dictates the contribution to the final computed output of the algorithm */
 } ISP_StatisticsTypeDef;
+
+typedef struct
+{
+  uint8_t nbAreas;              /* Number of statistic areas */
+  ISP_StatisticsTypeDef* stats; /* Pointer on the array hosting the statistics of each area */
+} ISP_ExternalStatsTypeDef;
 
 /* Sensor delay */
 typedef struct
@@ -469,6 +428,56 @@ typedef struct
   ISP_ColorConvTypeDef colorConv;
   ISP_ISPGainTypeDef ISPGain;
 } ISP_RestartStateTypeDef;
+
+/* ISP application helpers providing control of non ISP features */
+typedef struct
+{
+  /* [OPTIONAL] Enable the camera preview on the LCD display */
+  ISP_StatusTypeDef (*StartPreview)(void *pHdcmipp);
+  /* [OPTIONAL] Disable the camera preview on the LCD display */
+  ISP_StatusTypeDef (*StopPreview)(void *pHdcmipp);
+  /* [OPTIONAL] Dump a frame of the camera pipeline. The parameters are:
+  *    pHdcmipp:  DCMIPP device handle.
+  *    Pipe:      Pipe where to perform the dump ('DUMP'(0) or 'ANCILLARY'(2))
+  *    Config:    Dump with the current pipe config, or without downsizing with
+  *               a specific pixel format.
+  *    pBuffer:   Pointer to the address of the dumped buffer (output parameter)
+  *    pMeta:     Pointer to buffer meta data (output parameter)
+  */
+  ISP_StatusTypeDef (*DumpFrame)(void *pHdcmipp,
+                                 uint32_t Pipe,
+                                 ISP_DumpCfgTypeDef Config,
+                                 uint32_t **pBuffer,
+                                 ISP_DumpFrameMetaTypeDef *pMeta);
+  /* [MANDATORY] Get sensor info */
+  ISP_StatusTypeDef (*GetSensorInfo)(uint32_t Instance, ISP_SensorInfoTypeDef *Info);
+  /* [MANDATORY] Set sensor gain */
+  ISP_StatusTypeDef (*SetSensorGain)(uint32_t Instance, int32_t Gain);
+  /* [MANDATORY] Get sensor gain */
+  ISP_StatusTypeDef (*GetSensorGain)(uint32_t Instance, int32_t *Gain);
+  /* [MANDATORY] Set sensor exposure */
+  ISP_StatusTypeDef (*SetSensorExposure)(uint32_t Instance, int32_t Exposure);
+  /* [MANDATORY] Get sensor exposure */
+  ISP_StatusTypeDef (*GetSensorExposure)(uint32_t Instance, int32_t *Exposure);
+  /* [OPTIONAL] Set sensor test pattern */
+  ISP_StatusTypeDef (*SetSensorTestPattern)(uint32_t Instance, int32_t mode);
+  /* [OPTIONAL] Get external statistics to consider for the 2A algorithms */
+  ISP_StatusTypeDef (*GetExternalStatistics)(uint32_t Instance, ISP_ExternalStatsTypeDef *Stats);
+} ISP_AppliHelpersTypeDef;
+
+/* ISP Device handle structure */
+typedef struct
+{
+  void *hDcmipp;
+  uint32_t cameraInstance;
+  ISP_StatAreaTypeDef statArea;
+  ISP_AlgoTypeDef **algorithm;
+  ISP_AppliHelpersTypeDef appliHelpers;
+  uint32_t MainPipe_FrameCount;
+  uint32_t AncillaryPipe_FrameCount;
+  uint32_t DumpPipe_FrameCount;
+  ISP_SensorInfoTypeDef sensorInfo;
+} ISP_HandleTypeDef;
 
 /* Exported constants --------------------------------------------------------*/
 #define ISP_DEMOS_STRENGTH_MAX              (7U)

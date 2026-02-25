@@ -742,7 +742,28 @@ void ISP_OutputMeta(ISP_HandleTypeDef *hIsp)
 ISP_StatusTypeDef ISP_GetLuxEstimation(ISP_HandleTypeDef *hIsp, uint32_t *pLux)
 {
   ISP_StatusTypeDef ret = ISP_OK;
-  int32_t lux = ISP_SVC_Misc_GetEstimatedLux(hIsp);
+  ISP_SVC_StatStateTypeDef stats;
+  int32_t lux;
+  uint8_t averageL;
+
+  ret = ISP_SVC_Stats_GetLatest(hIsp, &stats);
+  if (ret != ISP_OK)
+  {
+     return ISP_ERR_STAT_EINVAL;
+  }
+
+  /* Use weighted averageL from external stats if available and callback is defined */
+  if (hIsp->appliHelpers.GetExternalStatistics != NULL &&
+      stats.extStats.nbAreas > 0 && stats.extStats.stats != NULL)
+  {
+    averageL = ISP_SVC_Stats_WeightedAverageL(&stats.extStats);
+  }
+  else
+  {
+    averageL = stats.down.averageL;
+  }
+
+  lux = ISP_SVC_Misc_GetEstimatedLux(hIsp, averageL);
 
   if ((pLux == NULL) || (lux < 0))
   {

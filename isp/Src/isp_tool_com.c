@@ -126,7 +126,6 @@ void ISP_ToolCom_SendData(uint8_t *buffer, uint32_t buffer_size, char *dump_star
 uint32_t ISP_ToolCom_CheckCommandReceived(uint8_t **block_cmd)
 {
   uint32_t payload_size = 0;
-  received_packet.payload_size = usbx_read(received_packet.payload);
 
   if (received_packet.payload_size > 0)
   {

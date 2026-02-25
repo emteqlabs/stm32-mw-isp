@@ -26,7 +26,7 @@
 //#define ALGO_AWB_DBG_LOGS
 
 /* Interpolation ratio limit from where we decide to 'stick' to a reference profile */
-#define ISP_AWB_STICKY         0.05f
+#define ISP_AWB_STICKY         0.05
 /* Stat update limit from where we consider that the frame does not change */
 #define ISP_AWB_STAT_NO_CHANGE 1
 
@@ -159,7 +159,7 @@ ISP_StatusTypeDef ISP_AWB_GetConfig(ISP_StatisticsTypeDef *pStats, ISP_ColorConv
 #endif
       exactProfId = (int)downProfId;
     }
-    else if (interpolRatio >= 1.0f - ISP_AWB_STICKY)
+    else if (interpolRatio >= 1.0 - ISP_AWB_STICKY)
     {
       /* Select the 'up' profile */
 #ifdef ALGO_AWB_DBG_LOGS

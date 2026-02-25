@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- * @file    usbx_conf.h
+ * @file    usb_uvc.h
  * @author  AIS Application Team
  ******************************************************************************
  * @attention
@@ -19,6 +19,17 @@
 #define _USV_UVC_H_
 
 #include "usb_desc.h"
+
+#ifndef USBL_PACKET_PER_MICRO_FRAME
+#define USBL_PACKET_PER_MICRO_FRAME 1
+#endif
+
+#define UVC_BUFFER_NB                                  4
+
+#define UVC_ISO_FS_MPS                                 1023
+#define UVC_ISO_HS_MPS                                 (USBL_PACKET_PER_MICRO_FRAME * 1024)
+
+#define UVC_INTERVAL(n)                               (10000000U/(n))
 
 typedef struct
 {

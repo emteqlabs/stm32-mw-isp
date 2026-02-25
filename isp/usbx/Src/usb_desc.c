@@ -20,6 +20,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "stm32n6xx_hal.h"
 
@@ -31,7 +32,6 @@
 #define ARRAY_LEN(a) (sizeof(a)/sizeof(a[0]))
 
 #define DEV_MANUFACTURER_STRING      "STMicroelectronics"
-#define DEV_PRODUCT_STRING           "STM32 uvc"
 
 static void gen_serial_int_to_ascii(uint32_t value, char *p_buf, uint8_t len)
 {
@@ -386,7 +386,19 @@ int usb_get_manufacturer_string_desc(void *p_dst, int dst_len)
 
 int usb_get_product_string_desc(void *p_dst, int dst_len)
 {
-  return usb_get_string_desc(p_dst, dst_len, DEV_PRODUCT_STRING);
+  char dev_prod[64];
+  uint32_t uId[3];
+
+  uId[0] = HAL_GetUIDw0();
+  uId[1] = HAL_GetUIDw1();
+  uId[2] = HAL_GetUIDw2();
+
+  /* Build: "STM32 IQTUNE Camera " + 3x32-bit UID in hex */
+  (void)snprintf(dev_prod, sizeof(dev_prod),
+                     "STM32 IQTune Camera %08lX%08lX%08lX",
+                     (unsigned long)uId[0], (unsigned long)uId[1], (unsigned long)uId[2]);
+
+  return usb_get_string_desc(p_dst, dst_len, dev_prod);
 }
 
 int usb_get_serial_string_desc(void *p_dst, int dst_len)
@@ -410,7 +422,7 @@ static void build_usb_cdc_conf_desc(struct usb_cdc_conf_desc *desc, int max_pack
         build_cdc_union_func_desc(&desc->union_func_desc, &desc->call_mgt_func_desc.head, &desc->acm_func_desc.head, 0, 1);
         build_cdc_call_mgt_func_desc(&desc->call_mgt_func_desc, &desc->cdc_acm_ctrl_ep_desc.head, &desc->union_func_desc.head, 1);
         build_std_ep_desc(&desc->cdc_acm_ctrl_ep_desc, &desc->cdc_data_itf.head, &desc->call_mgt_func_desc.head,
-                           0x81, /* IN ep */
+                           0x82, /* IN ep */
                            0x03, /* irq */
                            8, /* max packet size */
                            8); /* interval */
@@ -424,7 +436,7 @@ static void build_usb_cdc_conf_desc(struct usb_cdc_conf_desc *desc, int max_pack
 							max_packet_size, /* max packet size */
                             0);
         build_std_ep_desc(&desc->cdc_acm_data_out_ep_desc, NULL, &desc->cdc_acm_data_in_ep_desc.head,
-                           0x82, /* IN ep */ // orig: 0x83
+                           0x81, /* IN ep */ // orig: 0x83
                            0x02, /* bulk */
 						   max_packet_size, /* max packet size */
                            0);
@@ -724,7 +736,7 @@ static void build_uvc_yuv422_conf_desc(struct uvc_yuv422_conf_desc *desc, uvc_de
         build_cdc_union_func_desc(&desc->union_func_desc, &desc->call_mgt_func_desc.head, &desc->acm_func_desc.head, 2, 3);
         build_cdc_call_mgt_func_desc(&desc->call_mgt_func_desc, &desc->cdc_acm_ctrl_ep_desc.head, &desc->union_func_desc.head, 3);
         build_std_ep_desc(&desc->cdc_acm_ctrl_ep_desc, &desc->cdc_data_itf.head, &desc->call_mgt_func_desc.head,
-                          0x82, /* IN ep */
+                          0x83, /* IN ep */
                           0x03, /* irq */
                           8, /* max packet size */
                           8); /* interval */
@@ -738,7 +750,7 @@ static void build_uvc_yuv422_conf_desc(struct uvc_yuv422_conf_desc *desc, uvc_de
 						  usb_max_packet_size, /* max packet size */
                           0);
         build_std_ep_desc(&desc->cdc_acm_data_out_ep_desc, NULL, &desc->cdc_acm_data_in_ep_desc.head,
-                          0x83, /* IN ep */
+                          0x82, /* IN ep */
                           0x02, /* bulk */
 						  usb_max_packet_size, /* max packet size */
                           0);

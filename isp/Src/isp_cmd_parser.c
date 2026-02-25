@@ -23,6 +23,7 @@
 #include "isp_cmd_parser.h"
 #include "isp_tool_com.h"
 #include "isp_services.h"
+#include "usbx.h"
 
 /* Private types -------------------------------------------------------------*/
 typedef enum {
@@ -33,6 +34,13 @@ typedef enum {
   ISP_CMD_OP_GET_OK            = 0x82,
   ISP_CMD_OP_GET_FAILURE       = 0x83,
 } ISP_CMD_Operation_TypeDef;
+
+typedef enum {
+  ISP_HOST_OS_UNKNOWN = 0,
+  ISP_HOST_OS_LINUX   = 1,
+  ISP_HOST_OS_WINDOWS = 2,
+  ISP_HOST_OS_MAC     = 3,
+} ISP_HostOsTypeDef;
 
 typedef enum {
   ISP_CMD_STATREMOVAL          = 0x00,
@@ -67,6 +75,7 @@ typedef enum {
   ISP_CMD_UNIQUE_GAMMA         = 0x1D,
   ISP_CMD_LUXREF               = 0x1E,
   ISP_CMD_AWBCOLORTEMP         = 0x1F,
+  ISP_CMD_HOST_OS_TYPE         = 0x20,
   /* Application API commands */
   ISP_CMD_USER_EXPOSURETARGET  = 0x80,
   ISP_CMD_USER_LISTWBREFMODES  = 0x81,
@@ -257,6 +266,12 @@ typedef struct
   uint32_t estimation;
 } ISP_CMD_LuxTypeDef;
 
+typedef struct
+{
+  ISP_CMD_HeaderTypeDef header;
+  ISP_HostOsTypeDef data;
+} ISP_CMD_HostOsTypeDef;
+
 /* Keep sensor info backward compatibility */
 typedef struct
 {
@@ -345,6 +360,7 @@ typedef union {
   ISP_CMD_FirmwareConfigTypeDef    firmwareConfig;
   ISP_CMD_MetadataOutputTypeDef    metadataOutput;
   ISP_CMD_FramedataTypeDef         framedata;
+  ISP_CMD_HostOsTypeDef            hostOsType;
 } ISP_CMD_TypeDef;
 
 /* Private constants ---------------------------------------------------------*/
@@ -361,6 +377,8 @@ static ISP_StatusTypeDef ISP_CmdParser_StatDownCb(ISP_AlgoTypeDef *pAlgo);
 
 /* Private variables ---------------------------------------------------------*/
 static ISP_SVC_StatStateTypeDef ISP_CmdParser_stats;
+
+static ISP_HostOsTypeDef ISP_HostOsType = ISP_HOST_OS_UNKNOWN;
 
 extern ISP_MetaTypeDef Meta;
 
@@ -459,6 +477,21 @@ static ISP_StatusTypeDef ISP_CmdParser_SetConfig(ISP_HandleTypeDef *hIsp, uint8_
   cmd_id = c.base.header.id;
   switch(cmd_id)
   {
+  case ISP_CMD_HOST_OS_TYPE:
+    switch (c.hostOsType.data)
+    {
+    case ISP_HOST_OS_LINUX:
+    case ISP_HOST_OS_WINDOWS:
+    case ISP_HOST_OS_MAC:
+      ISP_HostOsType = c.hostOsType.data;
+      ret = ISP_OK;
+      break;
+    default:
+      ret = ISP_ERR_CMDPARSER_COMMAND;
+      break;
+    }
+    break;
+
   case ISP_CMD_STATREMOVAL:
     /* Update both ISP and IQ params */
     ret = ISP_SVC_ISP_SetStatRemoval(hIsp, &c.statRemoval.data);
@@ -908,8 +941,15 @@ static ISP_StatusTypeDef ISP_CmdParser_GetConfig(ISP_HandleTypeDef *hIsp, uint8_
     }
     else
     {
-      c.framedata.luxEstimation = ISP_SVC_Misc_GetEstimatedLux(hIsp);
-      /* This function returns -1 in case current settings do not allow to calculate the lux value */
+      uint32_t lux;
+      ret = ISP_GetLuxEstimation(hIsp, &lux);
+      if (ret != ISP_OK){
+        /* Since this command is called frequently and to prevent the ISP IQTUNE application from locking up,
+           we choose to ignore the ISP error and return lux = 0 to indicate that the value cannot be estimated */
+        ret = ISP_OK;
+        lux = 0;
+      }
+      c.framedata.luxEstimation = (int32_t)lux;
     }
     if (IQParamConfig->AWBAlgo.enable)
     {
@@ -970,7 +1010,10 @@ static void ISP_CmdParser_SendDumpData(uint8_t* pFrame, uint32_t size)
   char dump_start_msg[32];
   char dump_stop_msg[32];
 
-  if (size > ISP_MAX_DUMP_SIZE) {
+  usbx_warn_dump_status(true);
+
+  if ((ISP_HostOsType == ISP_HOST_OS_WINDOWS) && (size > ISP_MAX_DUMP_SIZE))
+  {
     /* Split the data in several parts */
     do {
       if (first)
@@ -994,6 +1037,12 @@ static void ISP_CmdParser_SendDumpData(uint8_t* pFrame, uint32_t size)
 
       pFrame += sizeToSend;
       remaining -= sizeToSend;
+
+      /* Dirty hack that allows to dump frame with windows environment
+       * It slow down new transmission after having receive the acknowledgement.
+       */
+      for (uint32_t i = 0 ; i < 30000 ; i++);
+
     } while (remaining > 0);
   }
   else
@@ -1003,6 +1052,8 @@ static void ISP_CmdParser_SendDumpData(uint8_t* pFrame, uint32_t size)
     sprintf(dump_stop_msg, "%s]", ISP_DUMP_DATA_STR);
     ISP_ToolCom_SendData((uint8_t*)pFrame, size, dump_start_msg, dump_stop_msg);
   }
+
+  usbx_warn_dump_status(false);
 }
 
 /**

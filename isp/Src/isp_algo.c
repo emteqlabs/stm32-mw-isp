@@ -348,6 +348,7 @@ ISP_StatusTypeDef ISP_Algo_AEC_StatCb(ISP_AlgoTypeDef *pAlgo)
 ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
 {
   static ISP_SVC_StatStateTypeDef stats;
+  static ISP_SVC_StatLocation statLocation = ISP_STAT_LOC_DOWN;
   ISP_AlgoTypeDef *algo = (ISP_AlgoTypeDef *)pAlgo;
   ISP_IQParamTypeDef *IQParamConfig;
   ISP_RestartStateTypeDef *pRestartState;
@@ -359,7 +360,7 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
   static uint32_t currentL;
 #endif
   int32_t estimated_lux;
- ISP_HandleTypeDef *pIsp_handle = (ISP_HandleTypeDef *)hIsp;
+  ISP_HandleTypeDef *pIsp_handle = (ISP_HandleTypeDef *)hIsp;
 
   IQParamConfig = ISP_SVC_IQParam_Get(hIsp);
   if (IQParamConfig->AECAlgo.enable == false)
@@ -376,9 +377,15 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
     {
       return ret;
     }
+
+    if (pIsp_handle->appliHelpers.GetExternalStatistics != NULL)
+    {
+      statLocation = ISP_STAT_LOC_EXT;
+    }
+
   case ISP_ALGO_STATE_NEED_STAT:
     /* Ask for stats */
-    ret = ISP_SVC_Stats_GetNext(hIsp, &ISP_Algo_AEC_StatCb, pAlgo, &stats, ISP_STAT_LOC_DOWN,
+    ret = ISP_SVC_Stats_GetNext(hIsp, &ISP_Algo_AEC_StatCb, pAlgo, &stats, statLocation,
                                 ISP_STAT_TYPE_AVG, IQParamConfig->sensorDelay.delay);
     if (ret != ISP_OK)
     {
@@ -400,7 +407,16 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
     uint32_t end_algo_calc, end_algo_process = 20;
     uint32_t start_algo = DWT->CYCCNT;
 #endif
-    avgL = stats.down.averageL;
+    /* Use weighted averageL from external stats if available and callback is defined */
+    if (pIsp_handle->appliHelpers.GetExternalStatistics != NULL &&
+        stats.extStats.nbAreas > 0 && stats.extStats.stats != NULL)
+    {
+      avgL = ISP_SVC_Stats_WeightedAverageL(&stats.extStats);
+    }
+    else
+    {
+      avgL = stats.down.averageL;
+    }
 #ifdef ALGO_AEC_DBG_LOGS
     if (avgL != currentL)
     {
@@ -421,7 +437,7 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
       return ret;
     }
 
-    estimated_lux = ISP_SVC_Misc_GetEstimatedLux(hIsp);
+    estimated_lux = ISP_SVC_Misc_GetEstimatedLux(hIsp, (uint8_t)avgL);
 
 #ifdef ALGO_AEC_DBG_LOGS
     printf("Lux = %"PRIu32", L = %"PRIu32", E = %"PRIu32", G = %"PRIu32"\r\n", estimated_lux, avgL, exposureConfig.exposure, gainConfig.gain);
@@ -496,7 +512,7 @@ ISP_StatusTypeDef ISP_Algo_AEC_Process(void *hIsp, void *pAlgo)
 #endif
 
     /* Ask for stats */
-    ret = ISP_SVC_Stats_GetNext(hIsp, &ISP_Algo_AEC_StatCb, pAlgo, &stats, ISP_STAT_LOC_DOWN,
+    ret = ISP_SVC_Stats_GetNext(hIsp, &ISP_Algo_AEC_StatCb, pAlgo, &stats, statLocation,
                                 ISP_STAT_TYPE_AVG, IQParamConfig->sensorDelay.delay);
 
     /* Wait for stats to be ready */
@@ -1108,6 +1124,8 @@ ISP_StatusTypeDef ISP_Algo_Background_DeInit(void *hIsp, void *pAlgo)
 ISP_StatusTypeDef ISP_Algo_Background_Process(void *hIsp, void *pAlgo)
 {
   static ISP_SVC_StatStateTypeDef stats;
+  static ISP_SVC_StatLocation statLocation = ISP_STAT_LOC_DOWN;
+  ISP_HandleTypeDef *pIsp_handle = (ISP_HandleTypeDef *)hIsp;
   ISP_AlgoTypeDef *algo = (ISP_AlgoTypeDef *)pAlgo;
   ISP_IQParamTypeDef *IQParamConfig;
   ISP_StatusTypeDef ret = ISP_OK;
@@ -1132,9 +1150,14 @@ ISP_StatusTypeDef ISP_Algo_Background_Process(void *hIsp, void *pAlgo)
   switch(algo->state)
   {
   case ISP_ALGO_STATE_INIT:
+
+    if (pIsp_handle->appliHelpers.GetExternalStatistics != NULL)
+    {
+      statLocation = ISP_STAT_LOC_EXT;
+    }
   case ISP_ALGO_STATE_NEED_STAT:
     /* Ask for stats */
-    ret = ISP_SVC_Stats_GetNext(hIsp, &ISP_Algo_Background_StatCb, pAlgo, &stats, ISP_STAT_LOC_DOWN,
+    ret = ISP_SVC_Stats_GetNext(hIsp, &ISP_Algo_Background_StatCb, pAlgo, &stats, statLocation,
                                 ISP_STAT_TYPE_AVG, IQParamConfig->sensorDelay.delay);
     if (ret != ISP_OK)
     {
@@ -1151,7 +1174,7 @@ ISP_StatusTypeDef ISP_Algo_Background_Process(void *hIsp, void *pAlgo)
 
   case ISP_ALGO_STATE_STAT_READY:
     /* Ask for stats */
-    ret = ISP_SVC_Stats_GetNext(hIsp, &ISP_Algo_Background_StatCb, pAlgo, &stats, ISP_STAT_LOC_DOWN,
+    ret = ISP_SVC_Stats_GetNext(hIsp, &ISP_Algo_Background_StatCb, pAlgo, &stats, statLocation,
                                 ISP_STAT_TYPE_AVG, IQParamConfig->sensorDelay.delay);
 
     /* Wait for stats to be ready */

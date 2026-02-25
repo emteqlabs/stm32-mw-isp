@@ -1335,9 +1335,9 @@ ISP_StatusTypeDef ISP_SVC_Misc_GetFirmwareConfig(ISP_FirmwareConfigTypeDef *pCon
   }
   pConfig->deviceId = devId;
   /* UID */
-  pConfig->uId[0] = HAL_GetUIDw0();
+  pConfig->uId[0] = HAL_GetUIDw2();
   pConfig->uId[1] = HAL_GetUIDw1();
-  pConfig->uId[2] = HAL_GetUIDw2();
+  pConfig->uId[2] = HAL_GetUIDw0();
   /* Sensor Delay support status */
   pConfig->hasSensorDelay = 1;
   /* UVC streaming support */
@@ -1925,6 +1925,16 @@ void ISP_SVC_Stats_Gather(ISP_HandleTypeDef *hIsp)
   /* Cycle start / end */
   frameId = ISP_SVC_Misc_GetMainFrameId(hIsp);
 
+  if (hIsp->appliHelpers.GetExternalStatistics != NULL)
+  {
+    ISP_SVC_StatEngine.last.extFrameId = frameId;
+    if (hIsp->appliHelpers.GetExternalStatistics(hIsp->cameraInstance, &ISP_SVC_StatEngine.last.extStats) != ISP_OK)
+    {
+      ISP_SVC_StatEngine.last.extStats.nbAreas = 0;
+      ISP_SVC_StatEngine.last.extStats.stats = NULL;
+    }
+  }
+
   if (stagePrevious2 == GetStatCycleStart(ISP_STAT_LOC_UP))
   {
     ongoing->upFrameIdStart = frameId;
@@ -1999,7 +2009,8 @@ ISP_StatusTypeDef ISP_SVC_Stats_ProcessCallbacks(ISP_HandleTypeDef *hIsp)
     /* Check if stats are available for a client, comparing the location and the specified frameId */
     if (((client->location == ISP_STAT_LOC_DOWN) && (client->refFrameId <= pLastStat->downFrameIdStart)) ||
         ((client->location == ISP_STAT_LOC_UP) && (client->refFrameId <= pLastStat->upFrameIdStart)) ||
-        ((client->location == ISP_STAT_LOC_UP_AND_DOWN) && (client->refFrameId <= pLastStat->upFrameIdStart) && (client->refFrameId <= pLastStat->downFrameIdStart)))
+        ((client->location == ISP_STAT_LOC_UP_AND_DOWN) && (client->refFrameId <= pLastStat->upFrameIdStart) && (client->refFrameId <= pLastStat->downFrameIdStart)) ||
+        ((client->location == ISP_STAT_LOC_EXT) && (client->refFrameId <= pLastStat->extFrameId)))
     {
       /* Copy the stats into the client buffer */
       *(client->pStats) = *pLastStat;
@@ -2088,6 +2099,13 @@ ISP_StatusTypeDef ISP_SVC_Stats_GetNext(ISP_HandleTypeDef *hIsp, ISP_stat_ready_
     ISP_SVC_StatEngine.downRequest |= type;
   }
 
+  if (location & ISP_STAT_LOC_EXT)
+  {
+    /* initialize caller's pStats ext fields to safe default */
+    pStats->extStats.nbAreas = 0;
+    pStats->extStats.stats = NULL;
+  }
+
   if (type == ISP_STAT_TYPE_ALL_TMP)
   {
     /* Special case: request all stats for a short time (3 cycle) */
@@ -2103,6 +2121,22 @@ ISP_StatusTypeDef ISP_SVC_Stats_GetNext(ISP_HandleTypeDef *hIsp, ISP_stat_ready_
   ISP_SVC_StatEngine.client[i].refFrameId = refFrameId;
 
   return ISP_OK;
+}
+
+/**
+  * @brief  ISP_SVC_Stats_WeightedAverageL
+  *         Weighted averageL calculation
+  * @param  extStats: pointer to external statistics data
+  * @retval weighted averageL
+  */
+uint8_t ISP_SVC_Stats_WeightedAverageL(const ISP_ExternalStatsTypeDef *extStats)
+{
+  float sum = 0, wsum = 0;
+  for (uint8_t i = 0; i < extStats->nbAreas; ++i) {
+    sum += extStats->stats[i].averageL * extStats->stats[i].weight;
+    wsum += extStats->stats[i].weight;
+  }
+  return (wsum > 0) ? (uint8_t)(sum / wsum) : 0;
 }
 
 /**
@@ -2149,13 +2183,13 @@ ISP_StatusTypeDef ISP_SVC_Stats_EvaluateUp(ISP_HandleTypeDef *hIsp, ISP_Statisti
   * @brief  ISP_SVC_Misc_GetEstimatedLux
   *         Estimate the lux value of the scene captured by the sensor
   * @param  hIsp: ISP device handle
+  *         averageL: luminance average statistic value of the area where the lux is estimated
   * @retval estimated lux value (-1 if exposure is null, no possible estimation)
   */
-int32_t ISP_SVC_Misc_GetEstimatedLux(ISP_HandleTypeDef *hIsp)
+int32_t ISP_SVC_Misc_GetEstimatedLux(ISP_HandleTypeDef *hIsp, uint8_t averageL)
 {
   ISP_SensorExposureTypeDef exposureConfig;
   ISP_SensorGainTypeDef gainConfig;
-  ISP_SVC_StatStateTypeDef stats;
   ISP_IQParamTypeDef *IQParamConfig;
   double a, b, globalExposure;
   int32_t lux;
@@ -2169,12 +2203,6 @@ int32_t ISP_SVC_Misc_GetEstimatedLux(ISP_HandleTypeDef *hIsp)
   }
 
   ret = ISP_SVC_Sensor_GetGain(hIsp, &gainConfig);
-  if (ret != ISP_OK)
-  {
-    return -1;
-  }
-
-  ret = ISP_SVC_Stats_GetLatest(hIsp, &stats);
   if (ret != ISP_OK)
   {
     return -1;
@@ -2211,7 +2239,7 @@ int32_t ISP_SVC_Misc_GetEstimatedLux(ISP_HandleTypeDef *hIsp)
     return 0;
   }
 
-  lux = (int32_t)(IQParamConfig->luxRef.calibFactor * (a * globalExposure + b) * stats.down.averageL / globalExposure);
+  lux = (int32_t)((double)IQParamConfig->luxRef.calibFactor * (a * globalExposure + b) * averageL / globalExposure);
 
   if (lux <= IQParamConfig->luxRef.HL_LuxRef * 0.9)
   {
@@ -2224,7 +2252,7 @@ int32_t ISP_SVC_Misc_GetEstimatedLux(ISP_HandleTypeDef *hIsp)
     b = (IQParamConfig->luxRef.LL_LuxRef * (double)IQParamConfig->luxRef.LL_Expo1 / IQParamConfig->luxRef.LL_Lum1) -
         (a * IQParamConfig->luxRef.LL_Expo1);
 
-    lux = (int32_t)(IQParamConfig->luxRef.calibFactor * (a * globalExposure + b) * stats.down.averageL / globalExposure);
+    lux = (int32_t)((double)IQParamConfig->luxRef.calibFactor * (a * globalExposure + b) * averageL / globalExposure);
   }
 
   Meta.lux = (uint32_t)((lux < 0) ? 0 : lux);
